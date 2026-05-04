@@ -1,0 +1,28 @@
+name: impulse_signals
+description: "Impulse together with signals."
+version: 0.1.0
+homepage: https://github.com/Yoeri-z/impulse
+issue_tracker: https://github.com/Yoeri-z/impulse/issues
+publish_to: none
+topics:
+  - state
+  - signals
+
+environment:
+  sdk: ^3.11.4
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  impulse_flutter: ^0.1.0
+  signals_flutter: ^6.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  mocktail: ^1.0.5
+
+flutter:

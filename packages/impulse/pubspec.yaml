@@ -1,0 +1,19 @@
+name: impulse
+description: "Minimalist state management and dependency injection."
+version: 0.1.0
+repository: https://github.com/Yoeri-z/impulse
+issue_tracker: https://github.com/Yoeri-z/impulse/issues
+topics:
+  - state
+  - reactive
+  - dependency-injection
+
+environment:
+  sdk: ^3.11.4
+
+dev_dependencies:
+  lints: ^6.0.0
+  mocktail: ^1.0.5
+  test: ^1.25.6
+dependencies:
+  meta: ^1.17.0
