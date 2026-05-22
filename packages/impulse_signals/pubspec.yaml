@@ -3,7 +3,6 @@ description: "Impulse together with signals."
 version: 0.1.0
 homepage: https://github.com/Yoeri-z/impulse
 issue_tracker: https://github.com/Yoeri-z/impulse/issues
-publish_to: none
 topics:
   - state
   - signals

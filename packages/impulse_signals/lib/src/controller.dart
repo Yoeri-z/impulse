@@ -1,7 +1,8 @@
 import 'dart:collection';
 
 import 'package:flutter/cupertino.dart';
-import 'package:impulse/impulse.dart';
+
+import 'package:impulse_flutter/impulse_flutter.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
 /// A function used to dispose of a value.
