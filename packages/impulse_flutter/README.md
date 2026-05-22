@@ -2,6 +2,7 @@
 
 [![Tests](https://github.com/Yoeri-z/impulse/actions/workflows/test.yml/badge.svg)](https://github.com/Yoeri-z/impulse/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/Yoeri-z/impulse/graph/badge.svg)](https://codecov.io/gh/Yoeri-z/impulse)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 Flutter integration for [Impulse](https://github.com/Yoeri-z/impulse/blob/main/packages/impulse/README.md), providing easy and simple state management and dependency injection for your Flutter applications.
 
@@ -11,7 +12,7 @@ Flutter integration for [Impulse](https://github.com/Yoeri-z/impulse/blob/main/p
 
 - **Type-safe Dependency Injection:** Define your objects and their dependencies using various reference types.
 - **StoreScope:** Easily provide a `Store` to your entire widget tree or specific subtrees.
-- **Context Extensions:** Use `context.of()` and `context.peek()` for intuitive state access and widget rebuilding.
+- **Widget access and rebuilding:** Use `ref.of(context)` for intuitive state access and widget rebuilding.
 - **Automatic Lifecycle Management:** Objects are automatically disposed of when no longer needed by the widget tree.
 - **Reactivity Integration:** Built-in support for `Listenable` and `ChangeNotifier`.
 
@@ -67,6 +68,14 @@ ElevatedButton(
   onPressed: () => authServiceRef.peek(context).logout(),
   child: const Text('Logout'),
 )
+```
+
+you can also access the global singleton store `$store` to retrieve objects from anywhere, if you didnt pass a `Store` to `StoreScope` it also uses `$store`
+
+```dart
+void login(){
+  authServiceRef.get($store).login();
+}
 ```
 
 ### 4. Testing

@@ -25,6 +25,7 @@ class ImpulseBox<T> extends ImpulseNotifier {
   void Function()? _cancelSubscription;
   bool uninitialized = true;
   bool disposed = false;
+  bool _isEvaluating = false;
 
   /// Exposes the internal [_value] of this [ImpulseBox]
   @visibleForTesting
@@ -66,11 +67,20 @@ class ImpulseBox<T> extends ImpulseNotifier {
         'if this is intended consider using `box.reset()` instead of `box.dispose`',
       );
     }
+
     if (ref.isFactory) {
       return _create(store);
     }
 
     if (uninitialized) {
+      if (_isEvaluating) {
+        throw StateError(
+          'Circular dependency detected. The factory for ${ref.runtimeType} '
+          'tried to read itself while it was mid-initialization.',
+        );
+      }
+
+      _isEvaluating = true;
       final previousEvaluationBox = store.activeEvaluationBox;
       store.activeEvaluationBox = this;
 
@@ -78,6 +88,7 @@ class ImpulseBox<T> extends ImpulseNotifier {
         _bindValue(_create(store));
       } finally {
         store.activeEvaluationBox = previousEvaluationBox;
+        _isEvaluating = false;
       }
     }
 

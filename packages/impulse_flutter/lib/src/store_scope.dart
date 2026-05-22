@@ -123,7 +123,8 @@ class _StoreScopeState extends State<StoreScope> {
 
   @override
   void dispose() {
-    _store.reset();
+    if (widget.store == null) _store.reset();
+
     super.dispose();
   }
 

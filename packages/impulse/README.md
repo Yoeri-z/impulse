@@ -2,6 +2,7 @@
 
 [![Tests](https://github.com/Yoeri-z/impulse/actions/workflows/test.yml/badge.svg)](https://github.com/Yoeri-z/impulse/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/Yoeri-z/impulse/graph/badge.svg?flag=impulse)](https://codecov.io/gh/Yoeri-z/impulse)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 Easy and simple state management solution that mainly functions as a dependency injection service and integrates well with other state management solutions.
 

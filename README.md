@@ -2,6 +2,7 @@
 
 [![Tests](https://github.com/Yoeri-z/impulse/actions/workflows/test.yml/badge.svg)](https://github.com/Yoeri-z/impulse/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/Yoeri-z/impulse/graph/badge.svg)](https://codecov.io/gh/Yoeri-z/impulse)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 A minimalist, type-safe state management and dependency injection ecosystem for Dart and Flutter.
 
@@ -15,4 +16,4 @@ This monorepo contains the following packages:
 
 - If you are building a **Pure Dart** application (CLI, Server), use `impulse`.
 - If you are building a **Flutter** application, use `impulse_flutter` (which automatically includes `impulse`).
-- If you like using signals, add `impulse_signals` along with `impulse_flutter`.
+- If you like using signals, add `impulse_signals` (which automatically inclused `impulse_flutter` and `signals_flutter`).

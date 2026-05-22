@@ -232,6 +232,16 @@ void main() {
       expect(store.exists(dependencyRef), isFalse);
     });
 
+    test('circular dependencies are detected', () {
+      late final ImpulseReference<Object> refA;
+      late final ImpulseReference<Object> refB;
+
+      refA = Ref((store) => store.get(refB))();
+      refB = Ref((store) => store.get(refA))();
+
+      expect(() => store.init(refA), throwsStateError);
+    });
+
     test(
       'releasing dependent cleanly drops reference count of FamilyRef dependency',
       () {

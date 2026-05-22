@@ -2,6 +2,7 @@
 
 [![Tests](https://github.com/Yoeri-z/impulse/actions/workflows/test.yml/badge.svg)](https://github.com/Yoeri-z/impulse/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/Yoeri-z/impulse/graph/badge.svg)](https://codecov.io/gh/Yoeri-z/impulse)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 Impulse extension for [`signals`](https://dartsignals.dev/) by Rody Davis. This package provides a `Controller` class that simplifies managing the lifecycle of multiple signals and effects, similar to `SignalsMixin`. It also exports `impulse_flutter` and `signals_flutter` so everything is neatly provided in a single library.
 
@@ -40,6 +41,22 @@ class ThemeController extends Controller {
   void setThemeMode(ThemeMode mode) => themeMode.value = mode;
   void setSeedColor(Color color) => seedColor.value = color;
 }
+```
+
+The package also adds a small method to work with errors.
+
+```dart
+final (value, err) = attempt(() => myApiCall(...));
+
+// err is `AsyncError` from signals
+// contains the error and the stacktrace
+if(err != null){
+  print('Error oh no! ${err.error}')
+  print(err.stackTrace);
+}
+
+// value is value on succes
+print('Retrieved value $value');
 ```
 
 ## See also
