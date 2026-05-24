@@ -43,7 +43,7 @@ class ThemeController extends Controller {
 }
 ```
 
-The package also adds a small method to work with errors.
+The package also changes `impulse`'s method to work with errors to use `signal`'s `AsyncError` class for the `Result<T>` type.
 
 ```dart
 final (value, err) = attempt(() => myApiCall(...));

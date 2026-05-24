@@ -3,8 +3,8 @@ import 'dart:async';
 import 'reference.dart';
 import 'store.dart';
 
-/// Runs a [callback] within a scope that retains a list of [refs].
-/// The references are automatically released when the callback finishes.
+/// Runs a [callback] within a scope that retains a [ref].
+/// The [ref] is automatically released when the callback finishes.
 Future<T> withScope<T, R>(
   FutureOr<T> Function(Store store) callback, {
   required Store store,

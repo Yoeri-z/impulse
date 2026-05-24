@@ -8,6 +8,15 @@ class MockDisposable extends Mock implements Disposable {}
 
 class MockObject {}
 
+class MockNotifier extends ImpulseNotifier {
+  int count = 0;
+
+  void increment() {
+    count++;
+    notify();
+  }
+}
+
 void main() {
   late Store store;
 
@@ -69,60 +78,86 @@ void main() {
     });
   });
 
-  group('Store.watch', () {
-    late MockListenable listenable;
-    late ImpulseReference<MockListenable> listenableRef;
+  group('Store.watch & Store.select', () {
+    late MockNotifier counter;
+    late ImpulseReference<MockNotifier> counterRef;
 
     setUp(() {
-      listenable = MockListenable();
-      listenableRef = Ref((store) => listenable)();
+      counter = MockNotifier();
+      counterRef = Ref((store) => counter)();
     });
 
     test('should trigger callback when the listenable notifies', () {
       int callCount = 0;
-      void Function() notify = () {};
 
-      when(() => listenable.addListener(any())).thenAnswer((invocation) {
-        notify = invocation.positionalArguments.first as void Function();
-      });
-
-      store.watch(listenableRef, (_) => callCount++);
+      store.watch(counterRef, (_) => callCount++);
 
       // Bind box to listener (this calls addlistener on our ListenerMock basically)
       // watch is always lazy and doesnt return a value from the box so it doesnt actually initialize the box
-      store.init(listenableRef);
+      store.init(counterRef);
 
-      notify();
+      counter.notify();
 
       expect(callCount, 1);
     });
 
     test('should trigger callback when the object is replaced', () {
       int callCount = 0;
-      store.watch(listenableRef, (_) => callCount++);
+      store.watch(counterRef, (_) => callCount++);
 
-      final box = store.box(listenableRef);
+      final box = store.box(counterRef);
       box.produce(); // Initialize
-      box.replace(MockListenable());
+      box.replace(MockNotifier());
 
       expect(callCount, 1);
     });
 
     test('should stop triggering after unsubscription', () {
       int callCount = 0;
-      void Function() notify = () {};
 
-      when(() => listenable.addListener(any())).thenAnswer((invocation) {
-        notify = invocation.positionalArguments.first as void Function();
-      });
-
-      final unwatch = store.watch(listenableRef, (_) => callCount++);
-      store.init(listenableRef);
+      final unwatch = store.watch(counterRef, (_) => callCount++);
+      store.init(counterRef);
 
       unwatch();
-      notify();
+      counter.notify();
 
       expect(callCount, 0);
+      expect(store.exists(counterRef), isFalse);
+    });
+
+    test('Select notifies if value changes', () {
+      int callCount = 0;
+
+      final _ = store.select(
+        counterRef,
+        (counter) => counter.count,
+        (_) => callCount++,
+      );
+
+      store.init(counterRef);
+
+      counter.increment();
+      counter.increment();
+
+      expect(callCount, 2);
+    });
+
+    test('Select doesnt notify if value doesnt change', () {
+      int callCount = 0;
+
+      final _ = store.select(
+        counterRef,
+        (counter) => counter.count,
+        (_) => callCount++,
+      );
+
+      store.init(counterRef);
+
+      // the first notification always runs select because it has not cached an old value yet.
+      counter.notify();
+      counter.notify();
+
+      expect(callCount, 1);
     });
   });
 

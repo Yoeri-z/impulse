@@ -7,3 +7,4 @@ export 'src/interfaces.dart';
 export 'src/reactivity_delegate.dart';
 export 'src/reference.dart';
 export 'src/scope.dart';
+export 'src/error_handling.dart';

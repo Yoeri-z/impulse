@@ -36,7 +36,7 @@ class MyHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final counter = counterRef.of(context);
+    final counter = counterRef.bind(context);
 
     return Scaffold(
       appBar: AppBar(title: Text(title)),

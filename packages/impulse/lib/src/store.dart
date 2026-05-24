@@ -56,14 +56,43 @@ class Store {
 
   /// Watches a [ref] for changes. The [watch] callback is called whenever the object notifies.
   /// Returns a function to stop watching.
+  ///
+  /// Automatically disposes [ref] when nothing is watching it.
   void Function() watch<T>(ImpulseReference<T> ref, void Function(T) watch) {
     final box = this.box<T>(ref);
 
-    void listener() => watch(box.produce());
+    void listener() {
+      watch(box.produce());
+    }
 
+    box.retain();
     box.addListener(listener);
 
-    return () => box.removeListener(listener);
+    return () {
+      box.removeListener(listener);
+      box.release();
+    };
+  }
+
+  /// Watches a [ref] for changes and filters the output through [select].
+  /// Will only fire [watch] when the [select] value is different through comparison.
+  void Function() select<T, R>(
+    ImpulseReference<T> ref,
+    R Function(T) select,
+    void Function(R) watch, {
+    bool onlyOnDependencyChange = false,
+  }) {
+    R? oldValue;
+
+    return this.watch(ref, (object) {
+      final value = select(object);
+
+      if (oldValue == value) return;
+
+      oldValue = value;
+
+      watch(value);
+    });
   }
 
   /// Removes a [ref] and its associated object from the store, disposing of it.

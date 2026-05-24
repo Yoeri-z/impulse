@@ -12,7 +12,7 @@ class Counter extends ImpulseNotifier {
 }
 
 void main() async {
-  $store.watch(counterRef(), (counter) => print('Count is ${counter.count}'));
+  $store.watch(counterRef(), (count) => print('Count is $count'));
 
   $store.get(counterRef()).increment();
 

@@ -4,47 +4,34 @@ import 'package:impulse/impulse.dart';
 
 import 'context_extensions.dart';
 
-extension BindRefContext<T> on Ref<T> {
+/// provides [read] and [bind] for keyless references
+extension RefContext<T> on KeylessRef<T> {
   /// Retrieves the value of this [Ref] from the nearest [StoreScope].
   /// This does not create a dependency, so the widget will not rebuild when the value changes.
-  T peek(BuildContext context) {
-    return context.peek(this());
+  T read(BuildContext context) {
+    return context.read(this());
   }
 
   /// Binds the current widget to this [Ref] from the nearest [StoreScope].
   /// The widget will automatically rebuild whenever the reference notifies of a change.
   /// Can only be called if the widget is currently active.
-  T of(BuildContext context) {
-    return context.dependOn(this());
+  T bind(BuildContext context) {
+    return context.bind(this());
   }
 }
 
-extension BindFamilyRefContext<T, R> on FamilyRef<T, R> {
+/// provides [read] and [bind] for family references
+extension FamilyRefContext<T, R> on FamilyRef<T, R> {
   /// Retrieves the value of this [FamilyRef] from the nearest [StoreScope].
   /// This does not create a dependency, so the widget will not rebuild when the value changes.
-  T peek(BuildContext context, R param) {
-    return context.peek(this(param));
+  T read(BuildContext context, R param) {
+    return context.read(this(param));
   }
 
   /// Binds the current widget to this [FamilyRef] from the nearest [StoreScope].
   /// The widget will automatically rebuild whenever the reference notifies of a change.
   /// Can only be called if the widget is currently active.
-  T of(BuildContext context, R param) {
-    return context.dependOn(this(param));
-  }
-}
-
-extension BindFactoryRefContext<T> on FactoryRef<T> {
-  /// Retrieves the value of this [FactoryRef] from the nearest [StoreScope].
-  /// This does not create a dependency, so the widget will not rebuild when the value changes.
-  T peek(BuildContext context) {
-    return context.peek(this());
-  }
-
-  /// Binds the current widget to this [FactoryRef] from the nearest [StoreScope].
-  /// The widget will automatically rebuild whenever the reference notifies of a change.
-  /// Can only be called if the widget is currently active.
-  T of(BuildContext context) {
-    return context.dependOn(this());
+  T bind(BuildContext context, R param) {
+    return context.bind(this(param));
   }
 }

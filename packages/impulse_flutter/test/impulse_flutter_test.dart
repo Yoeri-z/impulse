@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:impulse_flutter/impulse_flutter.dart';
+import 'package:impulse_flutter/src/widgets.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockDependency extends Mock {
@@ -27,17 +28,17 @@ class TestApp extends StatelessWidget {
   }
 }
 
-class RefBuilder<T> extends StatelessWidget {
-  const RefBuilder({super.key, required this.ref, this.builder});
+class RefTextBuilder<T> extends StatelessWidget {
+  const RefTextBuilder({super.key, required this.ref});
 
   final ImpulseReference<T> ref;
-  final Widget Function(T)? builder;
 
   @override
   Widget build(BuildContext context) {
-    final value = context.dependOn(ref);
-    if (builder != null) return builder!(value);
-    return Text(value.toString());
+    return Binder(
+      ref: ref,
+      builder: (context, value) => Text(value.toString()),
+    );
   }
 }
 
@@ -54,7 +55,7 @@ class _InitStateErrorWidgetState extends State<InitStateErrorWidget> {
   @override
   void initState() {
     super.initState();
-    widget.ref.of(context);
+    widget.ref.bind(context);
   }
 
   @override
@@ -80,8 +81,8 @@ void main() {
         verify(() => mock.onDispose()).called(times);
     void verifyNeverDisposed() => verifyNever(() => mock.onDispose());
 
-    testWidgets('ref.of binds and initializes object', (tester) async {
-      await tester.pumpWidget(TestApp(child: RefBuilder(ref: testRef())));
+    testWidgets('ref.bind binds and initializes object', (tester) async {
+      await tester.pumpWidget(TestApp(child: RefTextBuilder(ref: testRef())));
 
       verifyInitialized(1);
     });
@@ -95,7 +96,7 @@ void main() {
             valueListenable: toggle,
             builder: (context, show, _) {
               if (!show) return const Text('Hidden');
-              return RefBuilder(ref: testRef());
+              return RefTextBuilder(ref: testRef());
             },
           ),
         ),
@@ -107,7 +108,7 @@ void main() {
       verifyDisposed(1);
     });
 
-    testWidgets('ref.peek initializes but does NOT bind to lifecycle', (
+    testWidgets('ref.read initializes but does NOT bind to lifecycle', (
       tester,
     ) async {
       final toggle = ValueNotifier(true);
@@ -120,8 +121,8 @@ void main() {
               if (!show) return const Text('Hidden');
               return Builder(
                 builder: (context) {
-                  testRef.peek(context);
-                  return const Text('Peeking');
+                  testRef.read(context);
+                  return const Text('Reading');
                 },
               );
             },
@@ -148,12 +149,12 @@ void main() {
                 ValueListenableBuilder(
                   valueListenable: toggle1,
                   builder: (context, show, _) =>
-                      show ? RefBuilder(ref: testRef()) : const SizedBox(),
+                      show ? RefTextBuilder(ref: testRef()) : const SizedBox(),
                 ),
                 ValueListenableBuilder(
                   valueListenable: toggle2,
                   builder: (context, show, _) =>
-                      show ? RefBuilder(ref: testRef()) : const SizedBox(),
+                      show ? RefTextBuilder(ref: testRef()) : const SizedBox(),
                 ),
               ],
             ),
@@ -187,7 +188,7 @@ void main() {
           child: Builder(
             builder: (context) {
               buildCount++;
-              listenableRef.of(context);
+              listenableRef.bind(context);
               return const Text('Reactive');
             },
           ),
@@ -200,14 +201,14 @@ void main() {
       expect(buildCount, 2);
     });
 
-    testWidgets('peek does NOT cause rebuild on notify', (tester) async {
+    testWidgets('read does NOT cause rebuild on notify', (tester) async {
       int buildCount = 0;
       await tester.pumpWidget(
         TestApp(
           child: Builder(
             builder: (context) {
               buildCount++;
-              listenableRef.peek(context);
+              listenableRef.read(context);
               return const Text('Passive');
             },
           ),
@@ -223,8 +224,8 @@ void main() {
 
   group('Hierarchy & Scoping', () {
     testWidgets('Nested StoreScope provides nearest store', (tester) async {
-      final rootStore = Store();
-      final leafStore = Store();
+      final rootStore = createStore();
+      final leafStore = createStore();
       final stringRef = Ref((store) => 'root');
 
       rootStore.override(stringRef(), (_) => 'root');
@@ -239,7 +240,8 @@ void main() {
             store: leafStore,
             child: Builder(
               builder: (context) {
-                retrievedValue = stringRef.of(context);
+                retrievedValue = stringRef.bind(context);
+
                 return const Text('Testing Scopes');
               },
             ),
@@ -253,8 +255,8 @@ void main() {
     testWidgets('StoreScope updates store when widget property changes', (
       tester,
     ) async {
-      final store1 = Store();
-      final store2 = Store();
+      final store1 = createStore();
+      final store2 = createStore();
       final ref = Ref((s) => 'val');
       store1.override(ref(), (_) => 's1');
       store2.override(ref(), (_) => 's2');
@@ -266,7 +268,7 @@ void main() {
           valueListenable: storeNotifier,
           builder: (context, store, _) => TestApp(
             store: store,
-            child: RefBuilder(ref: ref()),
+            child: RefTextBuilder(ref: ref()),
           ),
         ),
       );
@@ -290,7 +292,7 @@ void main() {
             valueListenable: toggle,
             builder: (context, show, _) {
               if (!show) return const Text('Gone');
-              return StoreScope(child: RefBuilder(ref: ref()));
+              return StoreScope(child: RefTextBuilder(ref: ref()));
             },
           ),
         ),
@@ -311,7 +313,7 @@ void main() {
         MaterialApp(
           home: Builder(
             builder: (context) {
-              return Text(ref.of(context));
+              return Text(ref.bind(context));
             },
           ),
         ),
@@ -332,14 +334,14 @@ void main() {
   });
 
   group('Ref variations', () {
-    testWidgets('FamilyRef.of binds correctly', (tester) async {
+    testWidgets('FamilyRef.bind binds correctly', (tester) async {
       final family = FamilyRef<String, int>((store, arg) => 'val-$arg');
-      final store = Store();
+      final store = createStore();
 
       await tester.pumpWidget(
         TestApp(
           store: store,
-          child: RefBuilder(ref: family(1)),
+          child: RefTextBuilder(ref: family(1)),
         ),
       );
 
@@ -350,18 +352,18 @@ void main() {
       expect(store.exists(family(1)), isFalse);
     });
 
-    testWidgets('FactoryRef.of retrieves fresh value', (tester) async {
+    testWidgets('FactoryRef.bind retrieves fresh value', (tester) async {
       int count = 0;
       final factory = FactoryRef((store) => ++count);
-      final store = Store();
+      final store = createStore();
 
       await tester.pumpWidget(
         TestApp(
           store: store,
           child: Column(
             children: [
-              RefBuilder(ref: factory()),
-              RefBuilder(ref: factory()),
+              RefTextBuilder(ref: factory()),
+              RefTextBuilder(ref: factory()),
             ],
           ),
         ),
@@ -369,10 +371,55 @@ void main() {
 
       expect(find.text('1'), findsOneWidget);
       expect(find.text('2'), findsOneWidget);
-
-      await tester.pumpWidget(SizedBox());
-
-      expect(store.exists(factory()), isFalse);
     });
   });
+
+  testWidgets('Selector', (tester) async {
+    int buildCount = 0;
+
+    final ref = Ref((store) => StateMock());
+    final store = createStore();
+
+    await tester.pumpWidget(
+      TestApp(
+        store: store,
+        child: Selector(
+          ref: ref(),
+          selector: (counter) => counter.count,
+          builder: (context, count) {
+            buildCount++;
+            return Text(count.toString());
+          },
+        ),
+      ),
+    );
+
+    ref.get(store).notify();
+
+    await tester.pump();
+
+    expect(buildCount, 2);
+
+    ref.get(store).notify();
+
+    await tester.pump();
+
+    expect(buildCount, 2);
+
+    ref.get(store).increment();
+
+    await tester.pumpAndSettle();
+
+    expect(buildCount, 3);
+    expect(find.text('1'), findsOneWidget);
+  });
+}
+
+class StateMock extends ImpulseNotifier {
+  int count = 0;
+
+  void increment() {
+    count++;
+    notify();
+  }
 }

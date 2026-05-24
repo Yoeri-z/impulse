@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:impulse_flutter/impulse_flutter.dart';
 import 'package:signals_flutter/signals_flutter.dart';
@@ -59,6 +59,7 @@ abstract class Controller implements Disposable {
   }
 
   /// Creates a computed signal from a list of [signals].
+  @protected
   FutureSignal<V> createComputedFrom<V, A>(
     List<ReadonlySignal<A>> signals,
     Future<V> Function(List<A> args) fn, {
@@ -80,6 +81,7 @@ abstract class Controller implements Disposable {
   }
 
   /// Creates an asynchronous computed signal.
+  @protected
   FutureSignal<V> createComputedAsync<V>(
     Future<V> Function() fn, {
     V? initialValue,
@@ -101,6 +103,7 @@ abstract class Controller implements Disposable {
   }
 
   /// Creates a future-based signal.
+  @protected
   FutureSignal<V> createFutureSignal<V>(
     Future<V> Function() fn, {
     V? initialValue,
@@ -122,6 +125,7 @@ abstract class Controller implements Disposable {
   }
 
   /// Creates a stream-based signal.
+  @protected
   StreamSignal<V> createStreamSignal<V>(
     Stream<V> Function() callback, {
     V? initialValue,
@@ -147,6 +151,7 @@ abstract class Controller implements Disposable {
   }
 
   /// Creates an asynchronous signal with an initial [value].
+  @protected
   AsyncSignal<V> createAsyncSignal<V>(
     AsyncState<V> value, {
     DisposeValue<AsyncState<V>>? dispose,
@@ -159,6 +164,7 @@ abstract class Controller implements Disposable {
   }
 
   /// Creates a standard signal with an initial value [val].
+  @protected
   FlutterSignal<V> createSignal<V>(
     V val, {
     DisposeValue<V>? dispose,
@@ -168,6 +174,7 @@ abstract class Controller implements Disposable {
   }
 
   /// Creates a list-based signal.
+  @protected
   ListSignal<V> createListSignal<V>(
     List<V> list, {
     DisposeValue<List<V>>? dispose,
@@ -180,6 +187,7 @@ abstract class Controller implements Disposable {
   }
 
   /// Creates a set-based signal.
+  @protected
   SetSignal<V> createSetSignal<V>(
     Set<V> set, {
     DisposeValue<Set<V>>? dispose,
@@ -191,7 +199,8 @@ abstract class Controller implements Disposable {
     );
   }
 
-  /// Creates a queue-based signal.
+  /// Creates a queue-based signal.'
+  @protected
   QueueSignal<V> createQueueSignal<V>(
     Queue<V> queue, {
     DisposeValue<Queue<V>>? dispose,
@@ -204,6 +213,7 @@ abstract class Controller implements Disposable {
   }
 
   /// Creates a map-based signal.
+  @protected
   MapSignal<K, V> createMapSignal<K, V>(
     Map<K, V> value, {
     DisposeValue<Map<K, V>>? dispose,
@@ -216,6 +226,7 @@ abstract class Controller implements Disposable {
   }
 
   /// Creates a computed signal.
+  @protected
   FlutterComputed<V> createComputed<V>(
     V Function() cb, {
     DisposeValue<V>? dispose,
@@ -225,6 +236,7 @@ abstract class Controller implements Disposable {
   }
 
   /// Creates an effect and registers it for automatic disposal.
+  @protected
   EffectCleanup createEffect(
     dynamic Function() cb, {
     String? debugLabel,
@@ -239,6 +251,7 @@ abstract class Controller implements Disposable {
   }
 
   /// Disposes of all registered signals and effects.
+  @internal
   void clearSignalsAndEffects() {
     final signals = _signals.values;
 

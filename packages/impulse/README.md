@@ -10,144 +10,253 @@ Impulse provides a lightweight way to manage shared state and dependencies using
 
 > The package is currently being implemented in some production-level code to validate its real-world use. It will hit `1.0` after this is complete.
 
-## Features
+## Quick start
 
-- **Type-safe Dependency Injection:** Define your objects and their dependencies using various reference types.
-- **Singleton & Factory Support:** Cache objects globally or create fresh instances every time.
-- **Parameterized Dependencies:** Use `FamilyRef` to create dependencies based on external arguments.
-- **Reactivity Integration:** Built-in support for `Listenable` objects and custom reactivity delegates.
-- **Lifecycle Management:** Automatic disposal of `Disposable` objects and custom disposal logic.
+Add Impulse to your project:
 
-## Getting Started
-
-Add `impulse` to your `pubspec.yaml`:
-
-```yaml
-dependencies:
-  impulse: latest
+```bash
+dart pub add impulse
 ```
 
-## Core Concepts
-
-### 1. The Store
-
-The `Store` is the central container for all your state objects. You can use the global `$store` or create your own instances.
+Below is a minimal example showing how to define a reference, retrieve it, watch for updates, and notify dependents:
 
 ```dart
 import 'package:impulse/impulse.dart';
 
-// Use the global store
-$store
+// 1. Define a Reference (Ref)
+final counterRef = Ref((store) => Counter());
 
-// Or create your own
-final myStore = Store();
-```
+class Counter extends ImpulseNotifier {
+  int count = 0;
 
-> I prefer to prefix anything related to global state with `$`.
+  void increment() {
+    count += 1;
+    notify(); // Notifies the store and all listening dependents
+  }
+}
 
-### 2. References
+void main() async {
+  // 2. Watch for changes (using the global $store)
+  final unwatch = $store.watch(counterRef(), (counter) {
+    print('Count is ${counter.count}');
+  });
 
-References define _how_ an object is created.
+  // 3. Retrieve the instance and update it (using the preferred syntax)
+  counterRef.get($store).increment(); // (or $store.get(counterRef()) if you prefer)
 
-#### `Ref<T>` (Singleton)
-
-Creates a single instance that is cached in the store. Subsequent reads return the same instance.
-
-```dart
-final authServiceRef = Ref((store) => AuthService());
-
-// Access it anywhere
-final auth = authServiceRef.get($store);
-```
-
-#### `FactoryRef<T>` (Factory)
-
-Creates a new instance every time it is retrieved.
-
-```dart
-final uuidRef = FactoryRef((store) => Uuid().v4());
-
-final id1 = uuidRef.get($store);
-final id2 = uuidRef.get($store); // id1 != id2
-```
-
-#### `FamilyRef<T, R>` (Parameterized)
-
-Creates a unique instance for each unique argument provided.
-
-```dart
-final userProfileRef = FamilyRef<UserProfile, String>((store, userId) {
-  return UserProfile(userId);
-});
-
-final userA = userProfileRef.get(store, 'A');
-final userA_again = userProfileRef.get(store, 'A'); // Same instance
-final userB = $store.get(userProfileRef('B')); // New instance
-```
-
-### 3. Reactivity & Watching
-
-Impulse can watch for changes in your objects. If an object implements `ImpulseListenable` (like `ValueNotifier`), the `watch` method will trigger whenever it notifies.
-
-```dart
-final counterRef = Ref((store) => ValueNotifier(0));
-
-final unwatch = $store.watch(counterRef(), (notifier) {
-  print('Counter changed to: ${notifier.value}');
-});
-
-// Later, to stop watching:
-unwatch();
-```
-
-### 4. Lifecycle & Disposal
-
-Objects that implement `Disposable` are automatically disposed of when they are dropped from the store or when the store is reset. You can also provide a custom `dispose` callback in the reference definition.
-
-```dart
-final databaseRef = Ref(
-  (store) => Database(),
-  dispose: (store, db) => db.close(),
-);
-```
-
-To remove an object from the store, you can use `drop`:
-
-```dart
-store.drop(myRef());
-```
-
-### 5. Testing
-
-When testing dependency injection, you usually want to swap out dependencies on the fly. To do this, we can use `store.override`.
-
-```dart
-main(){
-  test((){
-    $store.override(someRef, (store) => MyMock());
-
-    // To go back to the original constructor:
-    $store.removeOverride(someRef);
-  })
+  // Cleanup when done
+  unwatch();
+  $store.reset();
 }
 ```
 
-## Advanced Usage
+---
 
-### Pluggable Reactivity Adapters
+## Refs & the store
 
-Impulse uses a pluggable adapter system to handle how different types of objects are bound and disposed. By default, it supports `ImpulseListenable` (like `ValueNotifier`) and `Disposable`.
+### The Store
 
-You can easily extend Impulse to support other patterns (like BLoC, Streams, or custom state types) by adding a `ReactivityAdapter`.
+The `Store` is the central container where all of your dependencies and shared states live.
 
-#### Example: BLoC Integration
+- **Global Store**: Impulse provides a global default store instance named `$store`. For most applications, this is the only store you will need.
+- **Local Stores**: You can construct a new isolated store via `Store()`. This is particularly useful for hermetic testing or scoping specific modules of an application.
+
+Key Store API methods:
+
+- `store.get(ref())`: Retrieves or initializes the object associated with the reference.
+- `store.init(ref())`: Initializes a reference immediately without returning its value.
+- `store.watch(ref(), callback)`: Listens for notifications from the reference's object and invokes the callback. Returns an unwatch function.
+- `store.drop(ref())`: Manually removes the reference's object from the store and disposes of it.
+- `store.reset()`: Disposes of all stored objects and clears the store.
+- `store.reassemble()`: Forces a re-evaluation of all dependencies (highly useful for Flutter's Hot Reload).
+
+> **Note**: While `store.get(ref())` is fully supported, it is generally preferred to use `ref.get(store)` because it is shorter and more direct! Both styles are supported throughout the framework.
+
+---
+
+### Reference Types
+
+References define how dependencies are created, cached, and disposed. Impulse provides three primary reference types:
+
+#### 1. `Ref<T>` (Singleton Reference)
+
+Caches a single instance of `T` globally within the store.
 
 ```dart
-class BlocAdapter implements ReactivityAdapter {
+final authServiceRef = Ref(
+  (store) => AuthService(),
+  dispose: (service) => service.close(),
+);
+```
+
+#### 2. `FactoryRef<T>` (Factory Reference)
+
+Never caches the value. It creates and returns a brand-new instance of `T` every time it is requested from the store.
+
+```dart
+final uuidRef = FactoryRef((store) => const Uuid().v4());
+```
+
+#### 3. `FamilyRef<T, R>` (Parametrized Reference)
+
+Caches unique instances based on an input parameter of type `R`. Perfect for parametrized data fetches or services.
+
+```dart
+final userProfileRef = FamilyRef<UserProfile, String>(
+  (store, userId) => UserProfile(userId: userId),
+);
+
+// Usage:
+final profileA = userProfileRef.get(store, 'alice');
+final profileB = userProfileRef.get(store, 'bob');
+```
+
+---
+
+## `ImpulseNotifier` and error handling
+
+### `ImpulseNotifier`
+
+State objects can extend `ImpulseNotifier` to gain reactive capabilities. `ImpulseNotifier` implements `ImpulseListenable` and `Disposable` under the hood. When your state class calls `notify()`, all dependent boxes and active watchers are notified immediately, triggering cascading updates.
+
+```dart
+class ThemeState extends ImpulseNotifier {
+  bool isDarkMode = false;
+
+  void toggle() {
+    isDarkMode = !isDarkMode;
+    notify(); // Automatically triggers invalidation of any dependent Refs
+  }
+}
+```
+
+---
+
+### Error Handling with `Result<T>` and `attempt`
+
+Impulse includes a functional error-handling utility to deal with operations that might fail (e.g., network requests, file I/O).
+
+- **`Result<T>`**: A type alias representing the record `(T? value, Err? err)`.
+- **`attempt`**: A utility function that wraps an asynchronous execution, returning a `Result<T>` without throwing.
+- **`MapResult` Extension**: Exposes a `.map()` method to gracefully handle the success, failure, or empty state of a `Result`.
+
+```dart
+import 'package:impulse/impulse.dart';
+
+Future<String> fetchData() async {
+  // Can throw an error
+  return throw Exception('Network timeout');
+}
+
+void main() async {
+  final Result<String> (value, err) = await attempt(() => fetchData());
+
+  if (err != null) {
+    print('Fetch failed: ${err.error}');
+    return;
+  }
+
+  print('Fetched value: $value');
+}
+```
+
+---
+
+## Testing
+
+Impulse makes testing simple and hermetic by providing dependency overrides and allowing you to instantiate local, isolated stores.
+
+### 1. Using Overrides
+
+You can mock or stub any reference in the store. When a reference is overridden, any dependent references will automatically adapt and use the overridden version.
+
+```dart
+import 'package:test/test.dart';
+import 'package:impulse/impulse.dart';
+
+final apiRef = Ref((store) => RealApiService());
+final repositoryRef = Ref((store) => UserRepository(apiRef.get(store)));
+
+class MockApiService implements RealApiService {
+  @override
+  Future<String> getUserName() async => 'Mock User';
+}
+
+void main() {
+  late Store store;
+
+  setUp(() {
+    store = Store(); // Use a local store instead of global $store
+  });
+
+  tearDown(() {
+    // Reset the store to dispose of all objects and prevent tests from leaking state
+    store.reset();
+  });
+
+  test('UserRepository uses the overridden API service', () async {
+    // Override the RealApiService with MockApiService on this store
+    store.override(apiRef(), (store) => MockApiService());
+
+    final repo = repositoryRef.get(store);
+    expect(await repo.getUserName(), equals('Mock User'));
+  });
+}
+```
+
+### 2. Isolation & Resetting
+
+- **Isolation**: Always use local, isolated `Store()` instances in your tests instead of the global `$store` to ensure tests run in isolation and do not share state.
+- **Resetting**: In your test suite's `tearDown` or `setUp` callback, call `store.reset()`. This guarantees that all cached references are completely cleared and resources (like controllers or listeners) are properly disposed of, avoiding state bleeding between tests.
+
+---
+
+## Advanced
+
+### Interfaces
+
+Impulse relies on a set of core abstract interfaces to manage object lifecycles:
+
+- **`Disposable`**: An interface for classes that require manual resource cleanup.
+  ```dart
+  abstract class Disposable {
+    void dispose();
+  }
+  ```
+- **`ImpulseListenable`**: An interface for objects that can be listened to for state changes.
+  ```dart
+  abstract class ImpulseListenable {
+    void addListener(Listener listener);
+    void removeListener(Listener listener);
+  }
+  ```
+- **`ReactivityAdapter`**: An adapter interface defining how to bind to and dispose of specific object types within the store.
+  ```dart
+  abstract class ReactivityAdapter {
+    void Function()? onBind(dynamic value, void Function() notify);
+    void onDispose(Store store, dynamic value);
+  }
+  ```
+
+---
+
+### Reactivity delegate (with example for BLoC)
+
+The `ReactivityDelegate` coordinates custom bindings and disposals. By default, it supports objects implementing `ImpulseListenable` and `Disposable`. However, you can register custom `ReactivityAdapter`s to support external libraries or other state management solutions (like BLoC or Streams).
+
+Here is an example adapter for integrating BLoC/Cubit:
+
+```dart
+import 'package:bloc/bloc.dart';
+import 'package:impulse/impulse.dart';
+
+class BlocReactivityAdapter implements ReactivityAdapter {
+  const BlocReactivityAdapter();
+
   @override
   void Function()? onBind(dynamic value, void Function() notify) {
-    if (value is Bloc) {
-      // Listen to the bloc's state changes
+    if (value is BlocBase) {
+      // Whenever the Bloc/Cubit emits a new state, notify downstream dependents
       final subscription = value.stream.listen((_) => notify());
       return () => subscription.cancel();
     }
@@ -156,38 +265,69 @@ class BlocAdapter implements ReactivityAdapter {
 
   @override
   void onDispose(Store store, dynamic value) {
-    if (value is Bloc) {
-      // Automatically close the bloc when it's dropped from the store
+    if (value is BlocBase) {
+      // Automatically close the Bloc when it is dropped from the store
       value.close();
     }
   }
 }
 
-// Register the adapter on the store
-$store.reactivity.addAdapter(BlocAdapter());
+// Option A: Register the adapter on the global default `$store`
+$store.reactivity.addAdapter(const BlocReactivityAdapter());
+
+// Option B: Register the adapter when instantiating a custom local Store
+final customStore = Store(
+  delegate: ReactivityDelegate(
+    adapters: [const BlocReactivityAdapter()],
+  ),
+);
 ```
 
-Once registered, any reference that produces a `Bloc` will automatically be "watched" and "disposed" correctly by the store.
+---
 
-### Scoping References
+### Scopes
 
-To have a reference automatically be cleaned up after an operation, this package adds a helper function called `withScope`.
+The `withScope` function allows you to temporarily retain a reference in the store for the duration of an asynchronous callback. Once the callback completes (or throws), the reference is released. If its reference count drops to 0, it is automatically dropped and cleaned up.
 
 ```dart
-withScope(
-  () async {
-    // Perform operation
-  },
-  store: $store,
-  refs: [
-    refA(),
-    refB(),
-    refC(),
-  ]
-)
+final tempCacheRef = Ref((store) => TemporaryCache());
+
+void main() async {
+  final result = await withScope(
+    (store) async {
+      final cache = store.get(tempCacheRef());
+      return await cache.loadSessionData();
+    },
+    store: $store,
+    ref: tempCacheRef(),
+  );
+
+  // Outside the scope, tempCacheRef has been automatically released and disposed!
+  print($store.exists(tempCacheRef())); // false
+}
 ```
 
-This runs the operation and cleans up all the refs after it is done. If there are multiple scopes using the same ref, it is cleaned up after the last scope stops using it.
+---
+
+### The box model
+
+Under the hood, Impulse organizes references in a directed dependency graph using a container called `ImpulseBox`.
+
+```
+[Dependent Box]
+      │
+      ├─► (reads & watches) ──► [Dependency Box A]
+      └─► (reads & watches) ──► [Dependency Box B]
+```
+
+When you call `store.get(ref)` or `store.watch(ref)`:
+
+1. **Lazy Evaluation**: The reference's `create` callback is only evaluated when needed.
+2. **Automatic Dependency Tracking**: During evaluation, Impulse sets an active evaluation context. If your creator callback reads another reference (e.g., `store.get(otherRef)`), Impulse dynamically registers that `otherRef`'s box as a **dependency**, and the current box as a **dependent**.
+3. **Reactive Invalidation**: When a dependency notifies (or is replaced/reset), it recursively invalidates and resets all its dependents, causing them to re-evaluate and rebuild their state seamlessly.
+4. **Reference Counting & GC**: Every dependency relation acts as a retain lock. If a box is not configured with `keepAlive: true`, it tracks the number of active dependents and manual watchers. As soon as this count hits zero, the box cleanly tears itself down (calling the `ReactivityDelegate`'s `onDispose` and its own custom `dispose` callback) and removes itself from the store to save memory.
+
+---
 
 ## See also
 

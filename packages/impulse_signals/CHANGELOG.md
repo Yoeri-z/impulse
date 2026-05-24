@@ -1,3 +1,9 @@
+## 0.2.0
+
+- Made all methods on `Controller`, except for `dispose`, annotated with `@protected`.
+- Updated version of package `impulse_flutter` to 0.2.0, this introduces breaking changes.
+- Added `MapResult<T>` extension to the `Result<T>` type.
+
 ## 0.1.2
 
 - `impulse_signals` accidentally exported itsself instead of `impulse_flutter` (oops)

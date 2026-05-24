@@ -43,9 +43,7 @@ class StoreScope extends StatefulWidget {
             as _InheritedStoreElement?;
 
     if (storeElement == null) {
-      throw StateError(
-        'Could not find a `StoreScope` ancestor, make sure you wrap the widget tree with a `StoreScope` widget',
-      );
+      throw _scopeNotFound();
     }
 
     final storeWidget = storeElement.widget as _InheritedStore;
@@ -79,6 +77,23 @@ class StoreScope extends StatefulWidget {
     }
 
     return box;
+  }
+
+  static StateError _scopeNotFound() {
+    return StateError(
+      'Could not find a `StoreScope` ancestor, make sure you wrap the widget tree with a `StoreScope` widget',
+    );
+  }
+
+  static Store of(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<_InheritedStore>();
+
+    if (widget == null) {
+      throw _scopeNotFound();
+    }
+
+    return widget.store;
   }
 
   @override

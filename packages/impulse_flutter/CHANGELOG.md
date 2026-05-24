@@ -1,3 +1,12 @@
+## 0.2.0
+
+- Documentation overhaul.
+- `impulse` package version bump.
+- Renamed `of` to `bind`.
+- Renamed `peek` to `read`.
+- Added `Selector` widget.
+- Added `StoreScope.of` static method to get the `Store` instance.
+
 ## 0.1.1
 
 - Minor readme improvements

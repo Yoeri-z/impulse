@@ -215,6 +215,8 @@ class ImpulseNotifier implements ImpulseListenable, Disposable {
   void removeListener(Listener listener) => _listeners.remove(listener);
 
   /// Notifies all registered listeners of a state change.
+  @protected
+  @visibleForTesting
   void notify() {
     for (var listener in _listeners) {
       listener();

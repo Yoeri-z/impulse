@@ -4,107 +4,297 @@
 [![codecov](https://codecov.io/gh/Yoeri-z/impulse/graph/badge.svg)](https://codecov.io/gh/Yoeri-z/impulse)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Flutter integration for [Impulse](https://github.com/Yoeri-z/impulse/blob/main/packages/impulse/README.md), providing easy and simple state management and dependency injection for your Flutter applications.
+Impulse Flutter is a state management and dependency injection library for Flutter. It provides central state containers, dependency tracking, and automatic lifecycle management.
 
-> The package is currently being implemented in some production-level code to validate its real-world use. It will hit `1.0` after this is complete.
+State objects are defined using references, which are consumed by widgets through context extensions. When widgets unmount and the reference count of a state object drops to zero, Impulse automatically disposes of it.
+
+---
 
 ## Features
 
-- **Type-safe Dependency Injection:** Define your objects and their dependencies using various reference types.
-- **StoreScope:** Easily provide a `Store` to your entire widget tree or specific subtrees.
-- **Widget access and rebuilding:** Use `ref.of(context)` for intuitive state access and widget rebuilding.
-- **Automatic Lifecycle Management:** Objects are automatically disposed of when no longer needed by the widget tree.
-- **Reactivity Integration:** Built-in support for `Listenable` and `ChangeNotifier`.
+- **No Code Generation**: Requires no build runner or pre-compilation steps.
+- **Automatic Garbage Collection**: States are disposed of and dropped from the store when no active widgets are listening.
+- **Dependency Injection**: Declare type-safe references and retrieve or override them as needed.
+- **Flutter Integration**: Built-in support for standard Flutter `Listenable` and `ChangeNotifier` classes.
+- **Testable**: Supports isolated stores and reference overrides for widget and unit testing.
 
-## Getting Started
+---
 
-Add `impulse_flutter` to your `pubspec.yaml`:
+## Quick Start
 
-```yaml
-dependencies:
-  impulse_flutter: latest
+Add Impulse Flutter to your project:
+
+```bash
+flutter pub add impulse_flutter
 ```
 
-## Core Concepts
-
-### 1. The Store Scope
-
-Wrap your widget tree with `StoreScope` to make the store available to the entire app.
+Below is a complete example of a simple counter application:
 
 ```dart
+import 'package:flutter/material.dart';
+import 'package:impulse_flutter/impulse_flutter.dart';
+
+// 1. Define a reference to a state class (ChangeNotifier is supported natively)
+final counterRef = Ref((store) => CounterState());
+
+class CounterState extends ChangeNotifier {
+  int count = 0;
+
+  void increment() {
+    count++;
+    notifyListeners(); // Rebuilds any widgets listening via .of(context)
+  }
+}
+
 void main() {
   runApp(
-    StoreScope(
-      child: const MyApp(),
+    // 2. Wrap your application in a StoreScope
+    const StoreScope(
+      child: MyApp(),
     ),
   );
 }
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: CounterPage(),
+    );
+  }
+}
+
+class CounterPage extends StatelessWidget {
+  const CounterPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // 3. Bind the state to the widget
+    final counter = counterRef.bind(context);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Impulse Counter Example')),
+      body: Center(
+        child: Text(
+          'Count: ${counter.count}',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        // 4. Use .read(context) to read the state without creating a widget dependency
+        onPressed: () => counterRef.read(context).increment(),
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
 ```
 
-### 2. References
+---
 
-Define how your objects are created using `Ref`, `FactoryRef`, or `FamilyRef`.
+## Core Concepts
+
+Impulse revolves around three primary concepts: the Store, StoreScope, and References.
+
+### 1. The Store & StoreScope
+
+- **The Store**: A central container where all active states and dependencies are cached and managed. Impulse exposes a default global store named `$store`.
+- **StoreScope**: A Flutter widget that provides a `Store` to the widget tree. By default, it provides the global default `$store` instance to the descendants. This is important because it means you can access and share the same global state from anywhere in your project (including from service classes or direct references outside the widget tree), while still allowing the widget tree to reactively listen to updates. It also tracks widget lifecycles to automatically release references when widgets unmount.
+
+---
+
+### 2. Reference Types
+
+References are definitions that describe how state objects are created and managed. They are declared globally and are used to request objects from the store:
+
+#### `Ref<T>` (Singleton Reference)
+
+Caches a single instance of `T` in the store. By default, it is dropped from the store when its reference count reaches zero.
 
 ```dart
-final authServiceRef = Ref((store) => AuthService());
+final authServiceRef = Ref(
+  (store) => AuthService(),
+  keepAlive: false, // Set to true to prevent automatic disposal
+  dispose: (service) => service.cleanup(), // Optional manual cleanup callback
+);
 ```
 
-### 3. Binding and Retrieving
+#### `FamilyRef<T, R>` (Parametrized Reference)
 
-Use `ref.of(context)` to retrieve an instance and automatically rebuild the widget when its state changes or the reference is replaced.
+Caches unique instances of `T` associated with an input parameter of type `R`.
+
+```dart
+final chatRoomRef = FamilyRef<ChatController, String>(
+  (store, roomId) => ChatController(roomId: roomId),
+);
+
+// Usage in widget:
+final chat = chatRoomref.bind(context, 'room-123');
+```
+
+#### `FactoryRef<T>` (Factory Reference)
+
+Does not cache instances. It evaluates the creation callback and returns a new instance of `T` every time it is requested.
+
+```dart
+final uuidRef = FactoryRef((store) => const Uuid().v4());
+```
+
+---
+
+## Reading State in Widgets
+
+Widgets interact with references using context-based extensions. There are two primary methods for retrieving state objects:
+
+### 1. `ref.bind(context)`
+
+Binds the calling widget to the state object. The widget will automatically rebuild whenever the state object notifies of a change.
+
+- Must only be called inside a widget's `build` method.
 
 ```dart
 @override
 Widget build(BuildContext context) {
-  final authService = authServiceRef.of(context);
-  return Text(authService.user.name);
+  final userProfile = userProfileref.bind(context);
+  return Text('Name: ${userProfile.name}');
 }
 ```
 
-Use `ref.peek(context)` in the rare cases where you don't want the widget to depend on the object's lifecycle, or if you are inside `initState` or `dispose`, where `ref.of` would throw an error. Prefer to avoid `peek` when possible, as it can lead to unpredictable behavior, such as an object never being automatically disposed of.
+### 2. `ref.read(context)`
+
+Retrieves the state object without registering a dependency. The widget will not rebuild when the state object changes.
 
 ```dart
 ElevatedButton(
-  onPressed: () => authServiceRef.peek(context).logout(),
-  child: const Text('Logout'),
+  onPressed: () {
+    authControllerRef.read(context).logout();
+  },
+  child: const Text('Log Out'),
 )
 ```
 
-you can also access the global singleton store `$store` to retrieve objects from anywhere, if you didnt pass a `Store` to `StoreScope` it also uses `$store`
+> **Note**: `ref.bind(context)` and `ref.read(context)` are shortcuts for calling `context.bind(ref())` and `context.read(ref())` respectively. Both styles are fully supported.
+
+---
+
+### Selector and Binder widgets
+
+To localize rebuilds, selector and bind widgets are available.
 
 ```dart
-void login(){
-  authServiceRef.get($store).login();
+Binder(
+  ref: authRef(),
+  builder: (context, auth){
+    //rebuilds whenever auth changes or notifies
+  }
+)
+
+Selector(
+  ref: counterRef(),
+  selector: (counter) => counter.count;
+  builder: (context, count){
+    // rebuilds whenever the count changes to a different value then i previously was.
+  }
+)
+
+```
+
+## Memory Management
+
+Impulse automatically handles the lifecycle of state objects using reference counting:
+
+1. When a widget retrieves an object via `ref.bind(context)`, the object's reference count is incremented.
+2. If multiple widgets listen to the same reference, the count increases accordingly.
+3. When widgets are popped or unmounted from the screen, the count is decremented.
+4. When the reference count reaches zero, the object is automatically disposed of (calling `dispose()` if it implements `ChangeNotifier` or `Disposable`) and dropped from the store.
+
+If a state object must persist regardless of widget lifecycles, set `keepAlive: true`:
+
+```dart
+final appThemeRef = Ref(
+  (store) => AppTheme(),
+  keepAlive: true, // Remains in memory indefinitely
+);
+```
+
+---
+
+## Testing & Overrides
+
+You can mock dependencies in unit and widget tests by providing reference overrides inside isolated store instances or on the global `$store` instance.
+
+### Widget Testing Example
+
+To test widgets in isolation, create a local `Store`, configure overrides, and pass it to a `StoreScope`:
+
+```dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:impulse_flutter/impulse_flutter.dart';
+import 'package:mocktail/mocktail.dart';
+
+final apiServiceRef = Ref((store) => RealApiService());
+
+class MockApiService extends Mock implements RealApiService {}
+
+void main() {
+  late Store testStore;
+  late MockApiService mockApi;
+
+  setUp(() {
+    testStore = createStore(); // Isolated store instance for this test
+    mockApi = MockApiService();
+
+    // Override the RealApiService reference
+    testStore.override(apiServiceRef(), (store) => mockApi);
+  });
+
+  tearDown(() {
+    // Reset the store to dispose of all objects and prevent tests from leaking state
+    testStore.reset();
+  });
+
+  testWidgets('Renders profiles correctly with overridden API', (tester) async {
+    when(() => mockApi.getUserName()).thenAnswer((_) async => 'Test Mock User');
+
+    await tester.pumpWidget(
+      StoreScope(
+        store: testStore, // Supply the isolated test store
+        child: const MaterialApp(
+          home: ProfileScreen(),
+        ),
+      ),
+    );
+
+    expect(find.text('Test Mock User'), findsOneWidget);
+  });
 }
 ```
 
-### 4. Testing
+> **Note**: it is possible to run your tests using the global `$store` instance (by overriding references on `$store` and calling `$store.reset()` in your test suite's `setUp` or `tearDown` blocks to clean up state), it is highly preferred to create and use isolated local `Store` instances instead. Isolated stores guarantee that tests do not share state, making them robust and safe to run concurrently. Only use `$store` if you absolutely have to.
 
-When testing dependency injection, you usually want to swap out dependencies on the fly. To do this, we can use `store.override`.
-
-```dart
-main(){
-  test((){
-    $store.override(someRef, (store) => MyMock());
-
-    // To go back to the original constructor:
-    $store.removeOverride(someRef);
-  })
-}
-```
+---
 
 ## Advanced Usage
 
-### Extending Reactivity (e.g., BLoC Integration)
+### Custom Reactivity Adapters
 
-Impulse uses a pluggable adapter system to handle how different types of objects are bound and disposed. You can easily add support for other patterns like BLoC by adding a `ReactivityAdapter`.
+By default, the default `$store` supports Flutter's standard `Listenable`, `ValueNotifier`, and `ChangeNotifier` classes.
+
+You can add custom `ReactivityAdapter`s to integrate third-party state managers or streams. Below is an example of an adapter for Cubit/BLoC:
 
 ```dart
-class BlocAdapter implements ReactivityAdapter {
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:impulse_flutter/impulse_flutter.dart';
+
+class CubitReactivityAdapter implements ReactivityAdapter {
+  const CubitReactivityAdapter();
+
   @override
   void Function()? onBind(dynamic value, void Function() notify) {
-    if (value is Bloc) {
-      // Listen to the bloc's state changes and trigger a rebuild
+    if (value is BlocBase) {
+      // Rebuild dependent widgets when the Cubit/Bloc emits a new state
       final subscription = value.stream.listen((_) => notify());
       return () => subscription.cancel();
     }
@@ -113,20 +303,24 @@ class BlocAdapter implements ReactivityAdapter {
 
   @override
   void onDispose(Store store, dynamic value) {
-    if (value is Bloc) {
-      // Automatically close the bloc when it's dropped from the store
+    if (value is BlocBase) {
+      // Close the Cubit/Bloc when dropped from the store
       value.close();
     }
   }
 }
 
-// Register the adapter on the store
-$store.reactivity.addAdapter(BlocAdapter());
+void main() {
+  // Register the adapter globally
+  $store.reactivity.addAdapter(const CubitReactivityAdapter());
+
+  runApp(const StoreScope(child: MyApp()));
+}
 ```
 
-Once registered, any `Ref` that produces a `Bloc` can be used with `ref.of(context)`, and the widget will automatically rebuild on every state change.
+---
 
-## See also
+## See Also
 
 - [impulse](https://github.com/Yoeri-z/impulse/blob/main/packages/impulse/README.md) for core concepts and advanced usage.
 - [impulse_signals](https://github.com/Yoeri-z/impulse/blob/main/packages/impulse_signals/README.md) for signals integration.
