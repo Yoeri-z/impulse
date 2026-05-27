@@ -1,3 +1,8 @@
+## 0.2.1
+
+- Added `ResultSelector` widget to select result fields on registered objects.
+  allowing you to easily build loading/error states.
+
 ## 0.2.0
 
 - Documentation overhaul.

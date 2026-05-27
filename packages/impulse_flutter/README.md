@@ -199,6 +199,14 @@ Selector(
   }
 )
 
+ResultSelector(
+  ref: authRef(),
+  selector: (auth) => auth.user,
+  nothingBuilder: (context) => CircularProgressIndicator(),
+  resultBuilder: (context, user) => Text('Active user ${user.name}'),
+  errBuilder: (context, err) => Text(err.toString()),
+)
+
 ```
 
 ## Memory Management

@@ -95,3 +95,56 @@ class _SelectorState<T, R> extends State<Selector<T, R>> {
     return widget.builder(context, _selectedValue);
   }
 }
+
+class ResultSelector<T, R> extends StatelessWidget {
+  const ResultSelector({
+    super.key,
+    required this.ref,
+    required this.selector,
+    required this.nothingBuilder,
+    required this.valueBuilder,
+    required this.errBuilder,
+    this.valueAndErrorBuilder,
+  });
+
+  /// The reference this [Selector] will bind to
+  final ImpulseReference<T> ref;
+
+  /// The result to select
+  final Result<R> Function(T) selector;
+
+  /// The builder that runs when the selected property has value [R]
+  final Widget Function(BuildContext context, R value) valueBuilder;
+
+  /// The builder that runs when the selected property is empty.
+  final Widget Function(BuildContext context) nothingBuilder;
+
+  /// The builder that runs when the selected property contains [Err]
+  final Widget Function(BuildContext context, Err err) errBuilder;
+
+  final Widget Function(BuildContext context, R value, Err err)?
+  valueAndErrorBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector(
+      ref: ref,
+      selector: selector,
+      builder: (context, value) {
+        return value.map(
+          onNothing: () => Builder(builder: nothingBuilder),
+          onValue: (value) =>
+              Builder(builder: (context) => valueBuilder(context, value)),
+          onError: (err) =>
+              Builder(builder: (context) => errBuilder(context, err)),
+          onValueAndError: valueAndErrorBuilder == null
+              ? null
+              : (value, err) => Builder(
+                  builder: (context) =>
+                      valueAndErrorBuilder!(context, value, err),
+                ),
+        );
+      },
+    );
+  }
+}
