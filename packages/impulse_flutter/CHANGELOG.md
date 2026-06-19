@@ -1,3 +1,7 @@
+## 0.3.1
+
+- Fixed a bug in context.read debug assertion.
+
 ## 0.3.0
 
 - Removed ref extensions, use context extensions instead.

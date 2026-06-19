@@ -16,7 +16,7 @@ extension GetContext on BuildContext {
     final box = store.box(ref);
 
     assert(() {
-      if (ref.keepAlive) return true;
+      if (ref.keepAlive || box.disposed) return true;
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (box.debugReferenceCount > 0) return;

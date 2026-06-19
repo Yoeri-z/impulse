@@ -191,14 +191,14 @@ To localize rebuilds, selector and bind widgets are available.
 
 ```dart
 Binder(
-  ref: authRef(),
+  ref: authRef,
   builder: (context, auth){
     //rebuilds whenever auth changes or notifies
   }
 )
 
 Selector(
-  ref: counterRef(),
+  ref: counterRef,
   selector: (counter) => counter.count;
   builder: (context, count){
     // rebuilds whenever the count changes to a different value then i previously was.
@@ -206,7 +206,7 @@ Selector(
 )
 
 ResultSelector(
-  ref: authRef(),
+  ref: authRef,
   selector: (auth) => auth.user,
   nothingBuilder: (context) => CircularProgressIndicator(),
   resultBuilder: (context, user) => Text('Active user ${user.name}'),
@@ -246,12 +246,10 @@ void main() async {
 
 Impulse automatically handles the lifecycle of state objects using reference counting:
 
-1. When a widget retrieves an object via `ref.bind(context)`, the object's reference count is incremented.
+1. When a widget retrieves an object via `ref.use(context)`, the object's reference count is incremented.
 2. If multiple widgets listen to the same reference, the count increases accordingly.
 3. When widgets are popped or unmounted from the screen, the count is decremented.
 4. When the reference count reaches zero, the object is automatically disposed of (calling `dispose()` if it implements `ChangeNotifier` or `Disposable`) and dropped from the store.
-
-If a state object must persist regardless of widget lifecycles, set `keepAlive: true`:
 
 ```dart
 final appThemeRef = Ref(
