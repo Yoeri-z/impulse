@@ -35,7 +35,7 @@ void main() {
   }
 
   ImpulseReference<T> createRef<T>(T obj) {
-    return Ref((store) => obj)();
+    return Ref((store) => obj);
   }
 
   group('FlutterReactivityDelegate', () {

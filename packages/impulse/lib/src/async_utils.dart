@@ -1,4 +1,8 @@
+import '../impulse.dart';
+
 typedef Result<T> = (T? value, Err? err);
+
+const emptyResult = (null, null);
 
 Future<Result<T>> attempt<T>(Future<T> Function() call) async {
   try {
@@ -31,5 +35,30 @@ extension MapResult<T> on Result<T> {
       (T value, _) => onValue(value),
       (_, Err err) => onError(err),
     };
+  }
+}
+
+class AsyncCall<T> extends ImpulseNotifier {
+  AsyncCall(this.call) {
+    _execute();
+  }
+
+  final Future<T> Function() call;
+
+  Result<T> result = emptyResult;
+
+  Future<void> _execute() async {
+    result = await attempt(call);
+    notify();
+  }
+
+  Future<void> refresh() async {
+    _execute();
+  }
+
+  Future<void> reload() async {
+    result = emptyResult;
+    notify();
+    _execute();
   }
 }

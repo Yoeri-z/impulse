@@ -32,12 +32,8 @@ class StoreScope extends StatefulWidget {
   }
 
   /// Retrieves an [ImpulseBox] from the nearest [StoreScope] ancestor.
-  /// If [depend] is true, the calling [context] will be bound to the reference.
-  static ImpulseBox<T> box<T>(
-    BuildContext context,
-    ImpulseReference<T> ref, {
-    bool depend = true,
-  }) {
+  /// the calling [context] will be bound to the reference.
+  static ImpulseBox<T> box<T>(BuildContext context, ImpulseReference<T> ref) {
     final storeElement =
         context.getElementForInheritedWidgetOfExactType<_InheritedStore>()
             as _InheritedStoreElement?;
@@ -50,30 +46,28 @@ class StoreScope extends StatefulWidget {
 
     final box = storeWidget.store.box(ref);
 
-    if (depend) {
-      if (!_tryDepend(context)) {
-        throw StateError(
-          '`context.of` should only be called when the widget is active'
-          'try moving the call or using `context.peek`',
-        );
-      }
+    if (!_tryDepend(context)) {
+      throw StateError(
+        '`context.of` should only be called when the widget is active'
+        'try moving the call or using `context.peek`',
+      );
+    }
 
-      final element = context as Element;
+    final element = context as Element;
 
-      if (!storeElement.hasRegisteredDisposalForElement(element, box.ref.key)) {
-        void listener() => element.markNeedsBuild();
-        void dispose() {
-          if (!box.disposed) {
-            box.removeListener(listener);
-            box.release();
-          }
+    if (!storeElement.hasRegisteredDisposalForElement(element, box.ref.key)) {
+      void listener() => element.markNeedsBuild();
+      void dispose() {
+        if (!box.disposed) {
+          box.removeListener(listener);
+          box.release();
         }
-
-        box.retain();
-        box.addListener(listener);
-
-        storeElement.registerDisposal(element, box.ref.key, dispose);
       }
+
+      box.retain();
+      box.addListener(listener);
+
+      storeElement.registerDisposal(element, box.ref.key, dispose);
     }
 
     return box;

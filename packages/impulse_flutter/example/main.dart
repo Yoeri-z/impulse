@@ -36,8 +36,6 @@ class MyHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final counter = counterRef.bind(context);
-
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: Center(
@@ -47,11 +45,11 @@ class MyHomePage extends StatelessWidget {
           children: <Widget>[
             const Text('You have pushed the button this many times:'),
             Text(
-              '${counter.count}',
+              '${context.use(counterRef).count}',
               style: Theme.of(context).textTheme.headlineLarge,
             ),
             FilledButton(
-              onPressed: () => counter.increment(),
+              onPressed: () => context.read(counterRef).increment(),
               child: Text('Increment count'),
             ),
           ],

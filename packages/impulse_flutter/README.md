@@ -71,8 +71,8 @@ class CounterPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 3. Bind the state to the widget
-    final counter = counterRef.bind(context);
+    // 3. Make the widget depend on state
+    final counter = context.use(counterRef);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Impulse Counter Example')),
@@ -84,7 +84,7 @@ class CounterPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         // 4. Use .read(context) to read the state without creating a widget dependency
-        onPressed: () => counterRef.read(context).increment(),
+        onPressed: () => context.ref(counterRef).increment(),
         child: const Icon(Icons.add),
       ),
     );
@@ -109,19 +109,29 @@ Impulse revolves around three primary concepts: the Store, StoreScope, and Refer
 
 References are definitions that describe how state objects are created and managed. They are declared globally and are used to request objects from the store:
 
-#### `Ref<T>` (Singleton Reference)
+#### 1. `Ref<T>` (Managed Reference)
 
 Caches a single instance of `T` in the store. By default, it is dropped from the store when its reference count reaches zero.
 
 ```dart
 final authServiceRef = Ref(
   (store) => AuthService(),
-  keepAlive: false, // Set to true to prevent automatic disposal
   dispose: (service) => service.cleanup(), // Optional manual cleanup callback
 );
 ```
 
-#### `FamilyRef<T, R>` (Parametrized Reference)
+#### 2. `SingletonRef<T>` (Singleton Reference)
+
+Caches a single instance of `T` in the store. By default, it is dropped from the store when its reference count reaches zero.
+
+```dart
+final authServiceRef = Ref(
+  (store) => AuthService(),
+  dispose: (service) => service.cleanup(), // Optional manual cleanup callback
+);
+```
+
+#### 3. `FamilyRef<T, R>` (Parametrized Reference)
 
 Caches unique instances of `T` associated with an input parameter of type `R`.
 
@@ -131,10 +141,10 @@ final chatRoomRef = FamilyRef<ChatController, String>(
 );
 
 // Usage in widget:
-final chat = chatRoomref.bind(context, 'room-123');
+final chat = context.use(chatRoomRef('room-123'));
 ```
 
-#### `FactoryRef<T>` (Factory Reference)
+#### 4. `FactoryRef<T>` (Factory Reference)
 
 Does not cache instances. It evaluates the creation callback and returns a new instance of `T` every time it is requested.
 
@@ -148,16 +158,14 @@ final uuidRef = FactoryRef((store) => const Uuid().v4());
 
 Widgets interact with references using context-based extensions. There are two primary methods for retrieving state objects:
 
-### 1. `ref.bind(context)`
+### 1. `context.use(ref)`
 
-Binds the calling widget to the state object. The widget will automatically rebuild whenever the state object notifies of a change.
-
-- Must only be called inside a widget's `build` method.
+Makes the widget depend on the state object. The widget will automatically rebuild whenever the state object notifies of a change.
 
 ```dart
 @override
 Widget build(BuildContext context) {
-  final userProfile = userProfileref.bind(context);
+  final userProfile = context.use(userProfileRef);
   return Text('Name: ${userProfile.name}');
 }
 ```
@@ -169,13 +177,11 @@ Retrieves the state object without registering a dependency. The widget will not
 ```dart
 ElevatedButton(
   onPressed: () {
-    authControllerRef.read(context).logout();
+    context.use(authControllerRef).logout();
   },
   child: const Text('Log Out'),
 )
 ```
-
-> **Note**: `ref.bind(context)` and `ref.read(context)` are shortcuts for calling `context.bind(ref())` and `context.read(ref())` respectively. Both styles are fully supported.
 
 ---
 
@@ -207,6 +213,33 @@ ResultSelector(
   errBuilder: (context, err) => Text(err.toString()),
 )
 
+```
+
+## Handling errors
+
+Impulse includes a functional error-handling utility to deal with operations that might fail (e.g., network requests, file I/O).
+
+- **`Result<T>`**: A type alias representing the record `(T? value, Err? err)`.
+- **`attempt`**: A utility function that wraps an asynchronous execution, returning a `Result<T>` without throwing.
+
+```dart
+import 'package:impulse/impulse.dart';
+
+Future<String> fetchData() async {
+  // Can throw an error
+  return throw Exception('Network timeout');
+}
+
+void main() async {
+  final (value, err) = await attempt(() => fetchData());
+
+  if (err != null) {
+    print('Fetch failed: ${err.error}');
+    return;
+  }
+
+  print('Fetched value: $value');
+}
 ```
 
 ## Memory Management
@@ -255,7 +288,7 @@ void main() {
     mockApi = MockApiService();
 
     // Override the RealApiService reference
-    testStore.override(apiServiceRef(), (store) => mockApi);
+    testStore.override(apiServiceRef, (store) => mockApi);
   });
 
   tearDown(() {

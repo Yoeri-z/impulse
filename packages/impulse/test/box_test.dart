@@ -39,8 +39,8 @@ void main() {
     registerFallbackValue(MockStore());
     registerFallbackValue(
       ImpulseReference(
+        (s) => 0,
         key: 'fallback',
-        create: (s) => 0,
         isFactory: false,
         keepAlive: false,
         reassemble: null,
@@ -66,8 +66,8 @@ void main() {
     void Function(int)? reassemble,
   }) {
     ref = ImpulseReference<int>(
+      create.call,
       key: 'test',
-      create: create.call,
       isFactory: isFactory,
       keepAlive: keepAlive,
       reassemble: reassemble,

@@ -17,7 +17,7 @@ class Binder<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final value = context.bind(ref);
+    final value = context.use(ref);
 
     return builder(context, value);
   }
@@ -58,7 +58,7 @@ class _SelectorState<T, R> extends State<Selector<T, R>> {
   }
 
   void _subscribe() {
-    final box = StoreScope.box(context, widget.ref, depend: false);
+    final box = StoreScope.box(context, widget.ref);
 
     _selectedValue = widget.selector(box.produce());
 

@@ -1,3 +1,7 @@
+## 0.3.0
+
+- Bumped internal dependencies, nothing in this package changed but the changes in the `impulse_flutter` and `impulse` package are breaking.
+
 ## 0.2.0
 
 - Made all methods on `Controller`, except for `dispose`, annotated with `@protected`.

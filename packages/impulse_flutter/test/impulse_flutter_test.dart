@@ -55,7 +55,8 @@ class _InitStateErrorWidgetState extends State<InitStateErrorWidget> {
   @override
   void initState() {
     super.initState();
-    widget.ref.bind(context);
+
+    context.use(widget.ref);
   }
 
   @override
@@ -82,7 +83,7 @@ void main() {
     void verifyNeverDisposed() => verifyNever(() => mock.onDispose());
 
     testWidgets('ref.bind binds and initializes object', (tester) async {
-      await tester.pumpWidget(TestApp(child: RefTextBuilder(ref: testRef())));
+      await tester.pumpWidget(TestApp(child: RefTextBuilder(ref: testRef)));
 
       verifyInitialized(1);
     });
@@ -96,7 +97,7 @@ void main() {
             valueListenable: toggle,
             builder: (context, show, _) {
               if (!show) return const Text('Hidden');
-              return RefTextBuilder(ref: testRef());
+              return RefTextBuilder(ref: testRef);
             },
           ),
         ),
@@ -108,7 +109,7 @@ void main() {
       verifyDisposed(1);
     });
 
-    testWidgets('ref.read initializes but does NOT bind to lifecycle', (
+    testWidgets('ref.read throws if widget is NOT bound to lifecycle', (
       tester,
     ) async {
       final toggle = ValueNotifier(true);
@@ -121,7 +122,7 @@ void main() {
               if (!show) return const Text('Hidden');
               return Builder(
                 builder: (context) {
-                  testRef.read(context);
+                  context.read(testRef);
                   return const Text('Reading');
                 },
               );
@@ -133,7 +134,7 @@ void main() {
       toggle.value = false;
       await tester.pumpAndSettle();
 
-      verifyNeverDisposed();
+      expect(tester.takeException(), isFlutterError);
     });
 
     testWidgets(
@@ -149,12 +150,12 @@ void main() {
                 ValueListenableBuilder(
                   valueListenable: toggle1,
                   builder: (context, show, _) =>
-                      show ? RefTextBuilder(ref: testRef()) : const SizedBox(),
+                      show ? RefTextBuilder(ref: testRef) : const SizedBox(),
                 ),
                 ValueListenableBuilder(
                   valueListenable: toggle2,
                   builder: (context, show, _) =>
-                      show ? RefTextBuilder(ref: testRef()) : const SizedBox(),
+                      show ? RefTextBuilder(ref: testRef) : const SizedBox(),
                 ),
               ],
             ),
@@ -188,7 +189,7 @@ void main() {
           child: Builder(
             builder: (context) {
               buildCount++;
-              listenableRef.bind(context);
+              context.use(listenableRef);
               return const Text('Reactive');
             },
           ),
@@ -200,26 +201,6 @@ void main() {
 
       expect(buildCount, 2);
     });
-
-    testWidgets('read does NOT cause rebuild on notify', (tester) async {
-      int buildCount = 0;
-      await tester.pumpWidget(
-        TestApp(
-          child: Builder(
-            builder: (context) {
-              buildCount++;
-              listenableRef.read(context);
-              return const Text('Passive');
-            },
-          ),
-        ),
-      );
-
-      listenable.notify();
-      await tester.pump();
-
-      expect(buildCount, 1);
-    });
   });
 
   group('Hierarchy & Scoping', () {
@@ -228,8 +209,8 @@ void main() {
       final leafStore = createStore();
       final stringRef = Ref((store) => 'root');
 
-      rootStore.override(stringRef(), (_) => 'root');
-      leafStore.override(stringRef(), (_) => 'leaf');
+      rootStore.override(stringRef, (_) => 'root');
+      leafStore.override(stringRef, (_) => 'leaf');
 
       String? retrievedValue;
 
@@ -240,7 +221,7 @@ void main() {
             store: leafStore,
             child: Builder(
               builder: (context) {
-                retrievedValue = stringRef.bind(context);
+                retrievedValue = context.use(stringRef);
 
                 return const Text('Testing Scopes');
               },
@@ -258,8 +239,8 @@ void main() {
       final store1 = createStore();
       final store2 = createStore();
       final ref = Ref((s) => 'val');
-      store1.override(ref(), (_) => 's1');
-      store2.override(ref(), (_) => 's2');
+      store1.override(ref, (_) => 's1');
+      store2.override(ref, (_) => 's2');
 
       final storeNotifier = ValueNotifier<Store>(store1);
 
@@ -268,7 +249,7 @@ void main() {
           valueListenable: storeNotifier,
           builder: (context, store, _) => TestApp(
             store: store,
-            child: RefTextBuilder(ref: ref()),
+            child: RefTextBuilder(ref: ref),
           ),
         ),
       );
@@ -292,7 +273,7 @@ void main() {
             valueListenable: toggle,
             builder: (context, show, _) {
               if (!show) return const Text('Gone');
-              return StoreScope(child: RefTextBuilder(ref: ref()));
+              return StoreScope(child: RefTextBuilder(ref: ref));
             },
           ),
         ),
@@ -313,7 +294,7 @@ void main() {
         MaterialApp(
           home: Builder(
             builder: (context) {
-              return Text(ref.bind(context));
+              return Text(context.use(ref));
             },
           ),
         ),
@@ -362,8 +343,8 @@ void main() {
           store: store,
           child: Column(
             children: [
-              RefTextBuilder(ref: factory()),
-              RefTextBuilder(ref: factory()),
+              RefTextBuilder(ref: factory),
+              RefTextBuilder(ref: factory),
             ],
           ),
         ),
@@ -384,7 +365,7 @@ void main() {
       TestApp(
         store: store,
         child: Selector(
-          ref: ref(),
+          ref: ref,
           selector: (counter) => counter.count,
           builder: (context, count) {
             buildCount++;
@@ -394,19 +375,18 @@ void main() {
       ),
     );
 
-    ref.get(store).notify();
+    store.get(ref).notify();
+
+    await tester.pump();
+    expect(buildCount, 2);
+
+    store.get(ref).notify();
 
     await tester.pump();
 
     expect(buildCount, 2);
 
-    ref.get(store).notify();
-
-    await tester.pump();
-
-    expect(buildCount, 2);
-
-    ref.get(store).increment();
+    store.get(ref).increment();
 
     await tester.pumpAndSettle();
 
@@ -423,7 +403,7 @@ void main() {
         TestApp(
           store: store,
           child: ResultSelector<ResultStateMock, String>(
-            ref: ref(),
+            ref: ref,
             selector: (state) => state.result,
             nothingBuilder: (context) => const Text('Nothing'),
             valueBuilder: (context, value) => Text('Value: $value'),
@@ -438,13 +418,13 @@ void main() {
     testWidgets('builds valueBuilder when result has a value', (tester) async {
       final ref = Ref((store) => ResultStateMock());
       final store = createStore();
-      ref.get(store).setValue('hello');
+      store.get(ref).setValue('hello');
 
       await tester.pumpWidget(
         TestApp(
           store: store,
           child: ResultSelector<ResultStateMock, String>(
-            ref: ref(),
+            ref: ref,
             selector: (state) => state.result,
             nothingBuilder: (context) => const Text('Nothing'),
             valueBuilder: (context, value) => Text('Value: $value'),
@@ -459,13 +439,13 @@ void main() {
     testWidgets('builds errBuilder when result has an error', (tester) async {
       final ref = Ref((store) => ResultStateMock());
       final store = createStore();
-      ref.get(store).setError('some error');
+      store.get(ref).setError('some error');
 
       await tester.pumpWidget(
         TestApp(
           store: store,
           child: ResultSelector<ResultStateMock, String>(
-            ref: ref(),
+            ref: ref,
             selector: (state) => state.result,
             nothingBuilder: (context) => const Text('Nothing'),
             valueBuilder: (context, value) => Text('Value: $value'),
@@ -477,27 +457,31 @@ void main() {
       expect(find.text('Error: some error'), findsOneWidget);
     });
 
-    testWidgets('builds valueAndErrorBuilder when result has both and builder is provided', (tester) async {
-      final ref = Ref((store) => ResultStateMock());
-      final store = createStore();
-      ref.get(store).setValueAndError('hello', 'some error');
+    testWidgets(
+      'builds valueAndErrorBuilder when result has both and builder is provided',
+      (tester) async {
+        final ref = Ref((store) => ResultStateMock());
+        final store = createStore();
+        store.get(ref).setValueAndError('hello', 'some error');
 
-      await tester.pumpWidget(
-        TestApp(
-          store: store,
-          child: ResultSelector<ResultStateMock, String>(
-            ref: ref(),
-            selector: (state) => state.result,
-            nothingBuilder: (context) => const Text('Nothing'),
-            valueBuilder: (context, value) => Text('Value: $value'),
-            errBuilder: (context, err) => Text('Error: ${err.error}'),
-            valueAndErrorBuilder: (context, value, err) => Text('Both: $value and ${err.error}'),
+        await tester.pumpWidget(
+          TestApp(
+            store: store,
+            child: ResultSelector<ResultStateMock, String>(
+              ref: ref,
+              selector: (state) => state.result,
+              nothingBuilder: (context) => const Text('Nothing'),
+              valueBuilder: (context, value) => Text('Value: $value'),
+              errBuilder: (context, err) => Text('Error: ${err.error}'),
+              valueAndErrorBuilder: (context, value, err) =>
+                  Text('Both: $value and ${err.error}'),
+            ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('Both: hello and some error'), findsOneWidget);
-    });
+        expect(find.text('Both: hello and some error'), findsOneWidget);
+      },
+    );
   });
 }
 

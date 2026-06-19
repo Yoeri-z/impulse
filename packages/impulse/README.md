@@ -37,12 +37,12 @@ class Counter extends ImpulseNotifier {
 
 void main() async {
   // 2. Watch for changes (using the global $store)
-  final unwatch = $store.watch(counterRef(), (counter) {
+  final unwatch = $store.watch(counterRef, (counter) {
     print('Count is ${counter.count}');
   });
 
-  // 3. Retrieve the instance and update it (using the preferred syntax)
-  counterRef.get($store).increment(); // (or $store.get(counterRef()) if you prefer)
+  // 3. Retrieve the instance and update it
+  $store.get(counterRef).increment();
 
   // Cleanup when done
   unwatch();
@@ -63,14 +63,12 @@ The `Store` is the central container where all of your dependencies and shared s
 
 Key Store API methods:
 
-- `store.get(ref())`: Retrieves or initializes the object associated with the reference.
-- `store.init(ref())`: Initializes a reference immediately without returning its value.
-- `store.watch(ref(), callback)`: Listens for notifications from the reference's object and invokes the callback. Returns an unwatch function.
-- `store.drop(ref())`: Manually removes the reference's object from the store and disposes of it.
+- `store.get(ref)`: Retrieves or initializes the object associated with the reference.
+- `store.init(ref)`: Initializes a reference immediately without returning its value.
+- `store.watch(ref, callback)`: Listens for notifications from the reference's object and invokes the callback. Returns an unwatch function.
+- `store.drop(ref)`: Manually removes the reference's object from the store and disposes of it.
 - `store.reset()`: Disposes of all stored objects and clears the store.
 - `store.reassemble()`: Forces a re-evaluation of all dependencies (highly useful for Flutter's Hot Reload).
-
-> **Note**: While `store.get(ref())` is fully supported, it is generally preferred to use `ref.get(store)` because it is shorter and more direct! Both styles are supported throughout the framework.
 
 ---
 
@@ -89,7 +87,18 @@ final authServiceRef = Ref(
 );
 ```
 
-#### 2. `FactoryRef<T>` (Factory Reference)
+#### 2 `SingletonRef<T>` (Singleton Reference)
+
+Caches a single instance of `T` in the store. By default, it is dropped from the store when its reference count reaches zero.
+
+```dart
+final authServiceRef = Ref(
+  (store) => AuthService(),
+  dispose: (service) => service.cleanup(), // Optional manual cleanup callback
+);
+```
+
+#### 3. `FactoryRef<T>` (Factory Reference)
 
 Never caches the value. It creates and returns a brand-new instance of `T` every time it is requested from the store.
 
@@ -97,7 +106,7 @@ Never caches the value. It creates and returns a brand-new instance of `T` every
 final uuidRef = FactoryRef((store) => const Uuid().v4());
 ```
 
-#### 3. `FamilyRef<T, R>` (Parametrized Reference)
+#### 4. `FamilyRef<T, R>` (Parametrized Reference)
 
 Caches unique instances based on an input parameter of type `R`. Perfect for parametrized data fetches or services.
 
@@ -107,8 +116,8 @@ final userProfileRef = FamilyRef<UserProfile, String>(
 );
 
 // Usage:
-final profileA = userProfileRef.get(store, 'alice');
-final profileB = userProfileRef.get(store, 'bob');
+final profileA = store.get(userProfileRef('Alice'));
+final profileB = store.get(userProfileRef('Bob'));
 ```
 
 ---
@@ -149,7 +158,7 @@ Future<String> fetchData() async {
 }
 
 void main() async {
-  final Result<String> (value, err) = await attempt(() => fetchData());
+  final (value, err) = await attempt(() => fetchData());
 
   if (err != null) {
     print('Fetch failed: ${err.error}');
@@ -196,10 +205,10 @@ void main() {
 
   test('UserRepository uses the overridden API service', () async {
     // Override the RealApiService with MockApiService on this store
-    store.override(apiRef(), (store) => MockApiService());
+    store.override(apiRef, (store) => MockApiService());
 
-    final repo = repositoryRef.get(store);
-    expect(await repo.getUserName(), equals('Mock User'));
+    final api = store.get(apiRef);
+    expect(await api.getUserName(), equals('Mock User'));
   });
 }
 ```
@@ -295,7 +304,7 @@ final tempCacheRef = Ref((store) => TemporaryCache());
 void main() async {
   final result = await withScope(
     (store) async {
-      final cache = store.get(tempCacheRef());
+      final cache = store.get(tempCacheRef);
       return await cache.loadSessionData();
     },
     store: $store,

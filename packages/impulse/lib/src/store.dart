@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:meta/meta.dart';
@@ -136,6 +137,22 @@ class Store {
 
     for (final box in boxes) {
       box.dispose();
+    }
+  }
+
+  /// Runs a [callback] within a scope that retains a [ref].
+  /// The [ref] is automatically released when the callback finishes.
+  Future<T> withScope<T, R>(
+    ImpulseReference<R> ref,
+    FutureOr<T> Function(Store store, R value) callback,
+  ) async {
+    final box = this.box(ref);
+    box.retain();
+
+    try {
+      return await callback(this, box.produce());
+    } finally {
+      box.release();
     }
   }
 }

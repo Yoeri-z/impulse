@@ -40,14 +40,14 @@ void main() {
     final objectRef = Ref((store) => MockObject());
 
     test('should retrieve the object created by the reference', () {
-      final retrieved = store.get(objectRef());
+      final retrieved = store.get(objectRef);
 
       expect(retrieved, isA<MockObject>());
     });
 
     test('should return the same instance for singleton references', () {
-      final first = store.get(objectRef());
-      final second = store.get(objectRef());
+      final first = store.get(objectRef);
+      final second = store.get(objectRef);
 
       expect(first, same(second));
     });
@@ -57,13 +57,13 @@ void main() {
     final objectRef = Ref((store) => MockObject());
 
     test('should return false if the reference is not in the store', () {
-      expect(store.exists(objectRef()), isFalse);
+      expect(store.exists(objectRef), isFalse);
     });
 
     test('should return true if the reference has been get', () {
-      store.init(objectRef());
+      store.init(objectRef);
 
-      expect(store.exists(objectRef()), isTrue);
+      expect(store.exists(objectRef), isTrue);
     });
   });
 
@@ -71,8 +71,8 @@ void main() {
     final objectRef = Ref((store) => MockObject());
 
     test('should return the same box instance for the same reference', () {
-      final box1 = store.box(objectRef());
-      final box2 = store.box(objectRef());
+      final box1 = store.box(objectRef);
+      final box2 = store.box(objectRef);
 
       expect(box1, same(box2));
     });
@@ -84,7 +84,7 @@ void main() {
 
     setUp(() {
       counter = MockNotifier();
-      counterRef = Ref((store) => counter)();
+      counterRef = Ref((store) => counter);
     });
 
     test('should trigger callback when the listenable notifies', () {
@@ -167,7 +167,7 @@ void main() {
 
     setUp(() {
       disposable = MockDisposable();
-      disposableRef = Ref((store) => disposable)();
+      disposableRef = Ref((store) => disposable);
     });
 
     test('should remove the object from the store', () {
@@ -189,8 +189,8 @@ void main() {
     test('should clear all objects and dispose them', () {
       final d1 = MockDisposable();
       final d2 = MockDisposable();
-      final r1 = Ref((s) => d1)();
-      final r2 = Ref((s) => d2)();
+      final r1 = Ref((s) => d1);
+      final r2 = Ref((s) => d2);
 
       store.init(r1);
       store.init(r2);
@@ -211,11 +211,11 @@ void main() {
     final r1 = Ref(
       (s) => Object(),
       reassemble: (value) => reassembled1 = true,
-    )();
+    );
     final r2 = Ref(
       (s) => Object(),
       reassemble: (value) => reassembled2 = true,
-    )();
+    );
 
     store.init(r1);
     store.init(r2);

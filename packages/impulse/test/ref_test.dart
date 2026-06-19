@@ -42,8 +42,8 @@ void main() {
       final factoryRef = FactoryRef(create.call);
       whenCreate();
 
-      final first = factoryRef.get(store);
-      final second = factoryRef.get(store);
+      final first = store.get(factoryRef);
+      final second = store.get(factoryRef);
 
       expect(first, isNot(same(second)));
       verifyCreateCalled(2);
@@ -55,8 +55,8 @@ void main() {
       final singletonRef = Ref(create.call);
       whenCreate();
 
-      final first = singletonRef.get(store);
-      final second = singletonRef.get(store);
+      final first = store.get(singletonRef);
+      final second = store.get(singletonRef);
 
       expect(first, same(second));
       verifyCreateCalled(1);
@@ -78,9 +78,9 @@ void main() {
       final familyRef = FamilyRef<Object, String>(familyCreate.call);
       whenFamilyCreate();
 
-      final first = familyRef.get(store, 'A');
-      final second = familyRef.get(store, 'A');
-      final third = familyRef.get(store, 'B');
+      final first = store.get(familyRef('A'));
+      final second = store.get(familyRef('A'));
+      final third = store.get(familyRef('B'));
 
       expect(first, same(second));
       expect(first, isNot(same(third)));
@@ -103,8 +103,8 @@ void main() {
 
     setUp(() {
       dependencyRef = ImpulseReference(
+        (store) => Object(),
         key: 'dep',
-        create: (store) => Object(),
         isFactory: false,
         keepAlive: false,
         reassemble: null,
@@ -112,11 +112,11 @@ void main() {
       );
 
       ref = ImpulseReference(
-        key: 'dependency',
-        create: (store) {
+        (store) {
           store.init(dependencyRef);
           return Object();
         },
+        key: 'dependency',
         isFactory: false,
         keepAlive: false,
         reassemble: null,
@@ -179,13 +179,13 @@ void main() {
       bool useDependency = true;
 
       final dynamicRef = ImpulseReference(
-        key: 'dynamic_dependent',
-        create: (store) {
+        (store) {
           if (useDependency) {
             store.init(dependencyRef);
           }
           return Object();
         },
+        key: 'dynamic_dependent',
         isFactory: false,
         keepAlive: false,
         reassemble: null,
@@ -206,11 +206,11 @@ void main() {
 
     test('shared dependency stays alive until all dependents are dropped', () {
       final alternateRef = ImpulseReference(
-        key: 'alternate_dependent',
-        create: (store) {
+        (store) {
           store.init(dependencyRef);
           return Object();
         },
+        key: 'alternate_dependent',
         isFactory: false,
         keepAlive: false,
         reassemble: null,
@@ -236,8 +236,8 @@ void main() {
       late final ImpulseReference<Object> refA;
       late final ImpulseReference<Object> refB;
 
-      refA = Ref((store) => store.get(refB))();
-      refB = Ref((store) => store.get(refA))();
+      refA = Ref((store) => store.get(refB));
+      refB = Ref((store) => store.get(refA));
 
       expect(() => store.init(refA), throwsStateError);
     });
@@ -248,30 +248,27 @@ void main() {
         final familyRef = FamilyRef<Object, String>((store, arg) => Object());
         late Object createdFam;
         final dependentRef = ImpulseReference(
-          key: 'dependent_of_family',
-          create: (store) {
-            createdFam = familyRef.get(store, 'A');
+          (store) {
+            createdFam = store.get(familyRef('A'));
             return Object();
           },
+          key: 'dependent_of_family',
           isFactory: false,
           keepAlive: false,
           reassemble: null,
           dispose: null,
         );
 
-        // 1. Emulate widget binding
         final depBox = store.box(dependentRef)
           ..produce()
           ..retain();
         final famBox = store.box(familyRef('A'));
 
         expect(createdFam, famBox.produce());
-        expect(famBox.debugReferenceCount, 1); // Should be retained
+        expect(famBox.debugReferenceCount, 1);
 
-        // 2. Emulate widget unmounting
         depBox.release();
 
-        // 3. The Ultimate Check: Did the family box clean up?
         expect(
           store.exists(familyRef('A')),
           isFalse,
@@ -280,5 +277,9 @@ void main() {
         );
       },
     );
+  });
+
+  group('AsyncRef', () {
+    ImpulseReference<AsyncCall>;
   });
 }

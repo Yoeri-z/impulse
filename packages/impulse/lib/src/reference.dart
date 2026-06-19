@@ -8,7 +8,7 @@ typedef Create<T> = T Function(Store store);
 /// A function that handles the disposal of an instance of [T] using the provided [store].
 typedef Dispose<T> = void Function(T value);
 
-/// A function tha updates the contents of value.
+/// A function that updates the contents of value.
 typedef Update<T> = void Function(T value);
 
 /// A function that creates an instance of [T] using the provided [store] and a parameter of type [R].
@@ -17,26 +17,23 @@ typedef FamilyCreate<T, R> = T Function(Store store, R param);
 /// A function that retrieves an instance of [T].
 typedef Get<T> = T Function();
 
-/// Interface for references that dont have a key (so all of them except familyRef)
-abstract class KeylessRef<T> {
-  ImpulseReference<T> call();
-}
-
 /// A definition of how an object is created, identified, and managed within the store.
 @immutable
 class ImpulseReference<T> {
   /// Creates an [ImpulseReference].
-  ImpulseReference({
-    required this.key,
-    required this.create,
-    required this.reassemble,
+  const ImpulseReference(
+    this.create, {
     required this.isFactory,
     required this.keepAlive,
-    required this.dispose,
-  });
+    this.reassemble,
+    this.dispose,
+    Object? key,
+  }) : _key = key;
+
+  final Object? _key;
 
   /// The unique key used to identify this reference in the store.
-  final Object key;
+  Object get key => _key ?? this;
 
   /// The function used to create the object.
   final Create<T> create;
@@ -58,117 +55,27 @@ class ImpulseReference<T> {
 
 /// A reference that creates a new instance every time it is retrieved from the store.
 @immutable
-class FactoryRef<T> implements KeylessRef<T> {
+class FactoryRef<T> extends ImpulseReference<T> {
   /// Creates a [FactoryRef] with a [create] function and an optional [dispose] function.
-  const FactoryRef(this.create, {this.reassemble, this.dispose});
-
-  /// The function used to create the object.
-  final Create<T> create;
-
-  /// The function used to update the object when the box reassembles.
-  ///
-  /// This usefull to ensure compatibility with hot reload.
-  final Update<T>? reassemble;
-
-  /// An optional function to handle manual disposal of the object.
-  final Dispose<T>? dispose;
-
-  /// Get the value this [FactoryRef] refers to from the [store].
-  T get(Store store) {
-    final ref = call();
-
-    return store.get(ref);
-  }
-
-  /// Returns an [ImpulseReference] representing this factory.
-  @override
-  ImpulseReference<T> call() {
-    return ImpulseReference(
-      key: this,
-      create: create,
-      isFactory: true,
-      keepAlive: true,
-      reassemble: reassemble,
-      dispose: dispose,
-    );
-  }
+  const FactoryRef(super.create, {super.reassemble, super.dispose})
+    : super(isFactory: true, keepAlive: true);
 }
 
 /// A reference that creates and caches a single instance in the store.
 @immutable
-class Ref<T> implements KeylessRef<T> {
+class Ref<T> extends ImpulseReference<T> {
   /// Creates a [Ref] with a [create] function.
-  const Ref(this.create, {this.reassemble, this.dispose});
-
-  /// The function used to create the object.
-  final Create<T> create;
-
-  /// The function used to update the object when the box reassembles.
-  ///
-  /// This usefull to ensure compatibility with hot reload.
-  final Update<T>? reassemble;
-
-  /// An optional function to handle manual disposal of the object.
-  final Dispose<T>? dispose;
-
-  /// Get the value this [Ref] refers to from the [store].
-  T get(Store store) {
-    final ref = call();
-
-    return store.get(ref);
-  }
-
-  /// Returns an [ImpulseReference] representing this singleton.
-  @override
-  ImpulseReference<T> call() {
-    return ImpulseReference(
-      key: this,
-      create: create,
-      isFactory: false,
-      keepAlive: false,
-      reassemble: reassemble,
-      dispose: dispose,
-    );
-  }
+  const Ref(super.create, {super.reassemble, super.dispose})
+    : super(isFactory: false, keepAlive: false);
 }
 
 /// A reference that creates and caches a single instance in the store forever (until the store gets reset).
 /// Commonly this is called a singleton.
 @immutable
-class SingletonRef<T> implements KeylessRef<T> {
+class SingletonRef<T> extends ImpulseReference<T> {
   /// Creates a [Ref] with a [create] function.
-  const SingletonRef(this.create, {this.reassemble, this.dispose});
-
-  /// The function used to create the object.
-  final Create<T> create;
-
-  /// The function used to update the object when the box reassembles.
-  ///
-  /// This usefull to ensure compatibility with hot reload.
-  final Update<T>? reassemble;
-
-  /// An optional function to handle manual disposal of the object.
-  final Dispose<T>? dispose;
-
-  /// Get the value this [Ref] refers to from the [store].
-  T get(Store store) {
-    final ref = call();
-
-    return store.get(ref);
-  }
-
-  /// Returns an [ImpulseReference] representing this singleton.
-  @override
-  ImpulseReference<T> call() {
-    return ImpulseReference(
-      key: this,
-      create: create,
-      isFactory: false,
-      keepAlive: true,
-      reassemble: reassemble,
-      dispose: dispose,
-    );
-  }
+  const SingletonRef(super.create, {super.reassemble, super.dispose})
+    : super(isFactory: false, keepAlive: true);
 }
 
 /// A reference that creates and caches unique instances based on an input parameter of type [R].
@@ -188,18 +95,11 @@ class FamilyRef<T, R> {
   /// An optional function to handle manual disposal of the object.
   final Dispose<T>? dispose;
 
-  /// Get the value this [FamilyRef] refers to from the [store].
-  T get(Store store, R param) {
-    final ref = call(param);
-
-    return store.get(ref);
-  }
-
   /// Returns an [ImpulseReference] representing this family member for a specific [param].
   ImpulseReference<T> call(R param) {
     return ImpulseReference(
+      (store) => create(store, param),
       key: (this, param),
-      create: (store) => create(store, param),
       isFactory: false,
       keepAlive: false,
       reassemble: reassemble,

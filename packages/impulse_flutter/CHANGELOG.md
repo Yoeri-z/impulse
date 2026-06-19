@@ -1,3 +1,9 @@
+## 0.3.0
+
+- Removed ref extensions, use context extensions instead.
+- Renamed context extension `bind` to `use`.
+- Added an assert to check if an object is left dangling after instantiation through `read`
+
 ## 0.2.1
 
 - Added `ResultSelector` widget to select result fields on registered objects.
