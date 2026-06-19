@@ -374,23 +374,18 @@ void main() {
         ),
       ),
     );
+    expect(buildCount, 1);
 
     store.get(ref).notify();
-
-    await tester.pump();
-    expect(buildCount, 2);
-
-    store.get(ref).notify();
-
     await tester.pump();
 
-    expect(buildCount, 2);
+    expect(buildCount, 1);
 
     store.get(ref).increment();
 
-    await tester.pumpAndSettle();
+    await tester.pump();
 
-    expect(buildCount, 3);
+    expect(buildCount, 2);
     expect(find.text('1'), findsOneWidget);
   });
 

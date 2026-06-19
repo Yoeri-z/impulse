@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:impulse/impulse.dart';
 
 import 'context_extensions.dart';
-import 'store_scope.dart';
 
 /// binds a [ref] to itself and fires [builder] when it notifies
 class Binder<T> extends StatelessWidget {
@@ -47,52 +46,26 @@ class Selector<T, R> extends StatefulWidget {
 }
 
 class _SelectorState<T, R> extends State<Selector<T, R>> {
-  late R _selectedValue;
-  VoidCallback? _unsubscribe;
+  R? value;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _unsubscribe?.call();
-    _subscribe();
-  }
+  Widget? _cache;
 
-  void _subscribe() {
-    final box = StoreScope.box(context, widget.ref);
-
-    _selectedValue = widget.selector(box.produce());
-
-    _unsubscribe = StoreScope.of(context).select<T, R>(
-      widget.ref,
-      widget.selector,
-      (newValue) {
-        if (mounted) {
-          setState(() {
-            _selectedValue = newValue;
-          });
-        }
-      },
-    );
-  }
-
-  @override
-  void didUpdateWidget(Selector<T, R> oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.ref.key != widget.ref.key) {
-      _unsubscribe?.call();
-      _subscribe();
-    }
-  }
-
-  @override
-  void dispose() {
-    _unsubscribe?.call();
-    super.dispose();
+  Widget _buildCachedWidget(BuildContext context) {
+    return widget.builder(context, value as R);
   }
 
   @override
   Widget build(BuildContext context) {
-    return widget.builder(context, _selectedValue);
+    final obj = context.use(widget.ref);
+
+    final newValue = widget.selector(obj);
+
+    if (_cache == null || newValue != value) {
+      value = newValue;
+      _cache = _buildCachedWidget(context);
+    }
+
+    return _cache!;
   }
 }
 
