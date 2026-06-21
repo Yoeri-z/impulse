@@ -28,7 +28,7 @@ class Selector<T, R> extends StatefulWidget {
   const Selector({
     super.key,
     required this.ref,
-    required this.selector,
+    required this.select,
     required this.builder,
   });
 
@@ -36,7 +36,7 @@ class Selector<T, R> extends StatefulWidget {
   final ImpulseReference<T> ref;
 
   /// The property to select
-  final R Function(T) selector;
+  final R Function(T) select;
 
   /// The builder that runs when the selected property changes.
   final Widget Function(BuildContext context, R value) builder;
@@ -58,7 +58,7 @@ class _SelectorState<T, R> extends State<Selector<T, R>> {
   Widget build(BuildContext context) {
     final obj = context.use(widget.ref);
 
-    final newValue = widget.selector(obj);
+    final newValue = widget.select(obj);
 
     if (_cache == null || newValue != value) {
       value = newValue;
@@ -102,7 +102,7 @@ class ResultSelector<T, R> extends StatelessWidget {
   Widget build(BuildContext context) {
     return Selector(
       ref: ref,
-      selector: selector,
+      select: selector,
       builder: (context, value) {
         return value.map(
           onNothing: () => Builder(builder: nothingBuilder),

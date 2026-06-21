@@ -1,3 +1,6 @@
+## 0.4.0
+- Renamed named argument `selector` to `select` in `Selector` widget.
+
 ## 0.3.1
 
 - Fixed a bug in context.read debug assertion.

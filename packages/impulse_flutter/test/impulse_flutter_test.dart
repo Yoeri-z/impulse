@@ -366,7 +366,7 @@ void main() {
         store: store,
         child: Selector(
           ref: ref,
-          selector: (counter) => counter.count,
+          select: (counter) => counter.count,
           builder: (context, count) {
             buildCount++;
             return Text(count.toString());

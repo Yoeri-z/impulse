@@ -1,6 +1,6 @@
 name: impulse_flutter
 description: "Minimalist state management and dependency injection."
-version: 0.3.1
+version: 0.4.0
 repository: https://github.com/Yoeri-z/impulse
 issue_tracker: https://github.com/Yoeri-z/impulse/issues
 topics:
