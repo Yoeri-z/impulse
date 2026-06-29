@@ -1,3 +1,7 @@
+## 0.3.1
+- updated dependencies to latest versions.
+- Changed [Controller] implementation to use the new `AsyncOptions` from signals.
+
 ## 0.3.0
 
 - Bumped internal dependencies, nothing in this package changed but the changes in the `impulse_flutter` and `impulse` package are breaking.
