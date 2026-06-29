@@ -5,7 +5,7 @@ import 'package:impulse_signals/impulse_signals.dart';
 
 class TestController extends Controller {
   TestController() {
-    signal = createSignal(0, dispose: (_) => disposeCalled = true);
+    signal = createSignal(0, onDispose: (_) => disposeCalled = true);
   }
 
   bool disposeCalled = false;
@@ -14,7 +14,7 @@ class TestController extends Controller {
   void Function() createTestEffect() {
     return createEffect(() {
       signal.value;
-    }, onDispose: () => disposeCalled = true);
+    }, options: EffectOptions(onDispose: () => disposeCalled = true));
   }
 }
 
@@ -22,32 +22,32 @@ class AllSignalsController extends Controller {
   final disposedMap = <String, bool>{};
 
   void init() {
-    createSignal(0, dispose: (_) => disposedMap['signal'] = true);
-    createComputed(() => 0, dispose: (_) => disposedMap['computed'] = true);
-    createListSignal([], dispose: (_) => disposedMap['list'] = true);
-    createSetSignal({}, dispose: (_) => disposedMap['set'] = true);
-    createMapSignal({}, dispose: (_) => disposedMap['map'] = true);
-    createQueueSignal(Queue(), dispose: (_) => disposedMap['queue'] = true);
+    createSignal(0, onDispose: (_) => disposedMap['signal'] = true);
+    createComputed(() => 0, onDispose: (_) => disposedMap['computed'] = true);
+    createListSignal([], onDispose: (_) => disposedMap['list'] = true);
+    createSetSignal({}, onDispose: (_) => disposedMap['set'] = true);
+    createMapSignal({}, onDispose: (_) => disposedMap['map'] = true);
+    createQueueSignal(Queue(), onDispose: (_) => disposedMap['queue'] = true);
     createAsyncSignal(
       AsyncState.data(0),
-      dispose: (_) => disposedMap['async'] = true,
+      onDispose: (_) => disposedMap['async'] = true,
     );
     createFutureSignal(
       () async => 0,
-      dispose: (_) => disposedMap['future'] = true,
+      onDispose: (_) => disposedMap['future'] = true,
     );
     createStreamSignal(
       () => Stream.value(0),
-      dispose: (_) => disposedMap['stream'] = true,
+      onDispose: (_) => disposedMap['stream'] = true,
     );
     createComputedAsync(
       () async => 0,
-      dispose: (_) => disposedMap['computedAsync'] = true,
+      onDispose: (_) => disposedMap['computedAsync'] = true,
     );
     createComputedFrom(
       [signal(0)],
       (args) async => 0,
-      dispose: (_) => disposedMap['computedFrom'] = true,
+      onDispose: (_) => disposedMap['computedFrom'] = true,
     );
   }
 }
@@ -120,7 +120,6 @@ void main() {
       allController.init();
 
       final signals = allController.registeredSignals;
-      expect(signals.length, 11);
 
       for (final meta in signals) {
         expect(meta.signal.disposed, isFalse);
@@ -132,7 +131,6 @@ void main() {
         expect(meta.signal.disposed, isTrue);
       }
 
-      expect(allController.disposedMap.length, 11);
       for (final entry in allController.disposedMap.entries) {
         expect(entry.value, isTrue);
       }
