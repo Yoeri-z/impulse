@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:impulse_flutter/impulse_flutter.dart';
-import 'package:impulse_flutter/src/widgets.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockDependency extends Mock {
