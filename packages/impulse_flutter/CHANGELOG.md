@@ -1,4 +1,5 @@
 ## 0.4.0
+- Made `context.read` use get the `StoreScope` widget instead of depending.
 - Renamed named argument `selector` to `select` in `Selector` widget.
 
 ## 0.3.1

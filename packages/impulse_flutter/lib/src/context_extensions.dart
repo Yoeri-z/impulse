@@ -11,7 +11,7 @@ extension GetContext on BuildContext {
   ///
   /// Will automatically throw errors in debug mode when dangling references are detected.
   T read<T>(ImpulseReference<T> ref) {
-    final store = StoreScope.of(this);
+    final store = StoreScope.of(this, depend: false);
 
     final box = store.box(ref);
 

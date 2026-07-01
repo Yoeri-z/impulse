@@ -1,4 +1,5 @@
-## 0.3.1
+## 0.4.0
+- Bumped `impulse_flutter` dependency to `0.4.1`
 - updated dependencies to latest versions.
 - Changed [Controller] implementation to use the new `AsyncOptions` from signals.
 

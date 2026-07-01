@@ -79,9 +79,10 @@ class StoreScope extends StatefulWidget {
     );
   }
 
-  static Store of(BuildContext context) {
-    final widget = context
-        .dependOnInheritedWidgetOfExactType<_InheritedStore>();
+  static Store of(BuildContext context, {bool depend = true}) {
+    final widget = depend
+        ? context.dependOnInheritedWidgetOfExactType<_InheritedStore>()
+        : context.getInheritedWidgetOfExactType<_InheritedStore>();
 
     if (widget == null) {
       throw _scopeNotFound();
