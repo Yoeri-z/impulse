@@ -1,3 +1,6 @@
+## 0.5.0
+- Removed all the onDispose callbacks. Use `signal.onDispose` instead to register callbacks.
+
 ## 0.4.0
 - Bumped `impulse_flutter` dependency to `0.4.1`
 - updated dependencies to latest versions.

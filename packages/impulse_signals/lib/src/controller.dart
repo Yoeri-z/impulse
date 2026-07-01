@@ -21,15 +21,7 @@ class SignalMetaData<T> {
 
   /// Disposes of the signal and calls the [onDispose] callback if provided.
   void disposeSignal() {
-    try {
-      if (signal.isInitialized &&
-          (signal is! AsyncSignal ||
-              (signal as AsyncSignal).internalValue.hasValue)) {
-        onDispose?.call(signal.peek());
-      }
-    } finally {
-      signal.dispose();
-    }
+    signal.dispose();
   }
 }
 
@@ -49,18 +41,12 @@ abstract class Controller implements Disposable {
   List<SignalMetaData> get registeredSignals =>
       _signals.values.toList(growable: false);
 
-  S _register<V, S extends ReadonlySignal<V>>(
-    S target, {
-    DisposeValue<V>? onDispose,
-  }) {
+  S _register<V, S extends ReadonlySignal<V>>(S target) {
     if (_signals[target.globalId] != null) {
       return target;
     }
 
-    _signals[target.globalId] = SignalMetaData<V>(
-      signal: target,
-      onDispose: onDispose,
-    );
+    _signals[target.globalId] = SignalMetaData<V>(signal: target);
 
     return target;
   }
@@ -70,13 +56,9 @@ abstract class Controller implements Disposable {
   FutureSignal<V> createComputedFrom<V, A>(
     List<ReadonlySignal<A>> signals,
     Future<V> Function(List<A> args) fn, {
-    DisposeValue<AsyncState<V>>? onDispose,
     AsyncSignalOptions<V>? options,
   }) {
-    return _register(
-      computedFrom<V, A>(signals, fn, options: options),
-      onDispose: onDispose,
-    );
+    return _register(computedFrom<V, A>(signals, fn, options: options));
   }
 
   /// Creates an asynchronous computed signal.
@@ -84,7 +66,6 @@ abstract class Controller implements Disposable {
   FutureSignal<V> createComputedAsync<V>(
     Future<V> Function() fn, {
     V? initialValue,
-    DisposeValue<AsyncState<V>>? onDispose,
     String? debugLabel,
     List<ReadonlySignal<dynamic>> dependencies = const [],
     bool lazy = true,
@@ -99,7 +80,6 @@ abstract class Controller implements Disposable {
           dependencies: dependencies,
         ),
       ),
-      onDispose: onDispose,
     );
   }
 
@@ -107,13 +87,9 @@ abstract class Controller implements Disposable {
   @protected
   FutureSignal<V> createFutureSignal<V>(
     Future<V> Function() fn, {
-    DisposeValue<AsyncState<V>>? onDispose,
     AsyncSignalOptions<V>? options,
   }) {
-    return _register(
-      futureSignal<V>(fn, options: options),
-      onDispose: onDispose,
-    );
+    return _register(futureSignal<V>(fn, options: options));
   }
 
   /// Creates a stream-based signal.
@@ -121,94 +97,66 @@ abstract class Controller implements Disposable {
   StreamSignal<V> createStreamSignal<V>(
     Stream<V> Function() callback, {
     AsyncSignalOptions<V>? options,
-    DisposeValue<AsyncState<V>>? onDispose,
   }) {
-    return _register(
-      streamSignal<V>(callback, options: options),
-      onDispose: onDispose,
-    );
+    return _register(streamSignal<V>(callback, options: options));
   }
 
   /// Creates an asynchronous signal with an initial [value].
   @protected
   AsyncSignal<V> createAsyncSignal<V>(
     AsyncState<V> value, {
-    DisposeValue<AsyncState<V>>? onDispose,
+
     AsyncSignalOptions<V>? options,
   }) {
-    return _register(
-      asyncSignal<V>(value, options: options),
-      onDispose: onDispose,
-    );
+    return _register(asyncSignal<V>(value, options: options));
   }
 
   /// Creates a standard signal with an initial value [val].
   @protected
-  FlutterSignal<V> createSignal<V>(
-    V val, {
-    DisposeValue<V>? onDispose,
-    SignalOptions<V>? options,
-  }) {
-    return _register(signal<V>(val, options: options), onDispose: onDispose);
+  FlutterSignal<V> createSignal<V>(V val, {SignalOptions<V>? options}) {
+    return _register(signal<V>(val, options: options));
   }
 
   /// Creates a list-based signal.
   @protected
   ListSignal<V> createListSignal<V>(
     List<V> list, {
-    DisposeValue<List<V>>? onDispose,
     ListSignalOptions<V>? options,
   }) {
-    return _register(
-      ListSignal<V>(list, options: options),
-      onDispose: onDispose,
-    );
+    return _register(ListSignal<V>(list, options: options));
   }
 
   /// Creates a set-based signal.
   @protected
-  SetSignal<V> createSetSignal<V>(
-    Set<V> set, {
-    DisposeValue<Set<V>>? onDispose,
-    SetSignalOptions<V>? options,
-  }) {
-    return _register(SetSignal<V>(set, options: options), onDispose: onDispose);
+  SetSignal<V> createSetSignal<V>(Set<V> set, {SetSignalOptions<V>? options}) {
+    return _register(SetSignal<V>(set, options: options));
   }
 
   /// Creates a queue-based signal.'
   @protected
   QueueSignal<V> createQueueSignal<V>(
     Queue<V> queue, {
-    DisposeValue<Queue<V>>? onDispose,
     QueueSignalOptions<V>? options,
   }) {
-    return _register(
-      QueueSignal<V>(queue, options: options),
-      onDispose: onDispose,
-    );
+    return _register(QueueSignal<V>(queue, options: options));
   }
 
   /// Creates a map-based signal.
   @protected
   MapSignal<K, V> createMapSignal<K, V>(
     Map<K, V> value, {
-    DisposeValue<Map<K, V>>? onDispose,
     MapSignalOptions<K, V>? options,
   }) {
-    return _register(
-      MapSignal<K, V>(value, options: options),
-      onDispose: onDispose,
-    );
+    return _register(MapSignal<K, V>(value, options: options));
   }
 
   /// Creates a computed signal.
   @protected
   FlutterComputed<V> createComputed<V>(
     V Function() cb, {
-    DisposeValue<V>? onDispose,
     ComputedOptions<V>? options,
   }) {
-    return _register(computed<V>(cb, options: options), onDispose: onDispose);
+    return _register(computed<V>(cb, options: options));
   }
 
   /// Creates an effect and registers it for automatic disposal.

@@ -5,7 +5,7 @@ import 'package:impulse_signals/impulse_signals.dart';
 
 class TestController extends Controller {
   TestController() {
-    signal = createSignal(0, onDispose: (_) => disposeCalled = true);
+    signal = createSignal(0)..onDispose(() => disposeCalled = true);
   }
 
   bool disposeCalled = false;
@@ -22,33 +22,22 @@ class AllSignalsController extends Controller {
   final disposedMap = <String, bool>{};
 
   void init() {
-    createSignal(0, onDispose: (_) => disposedMap['signal'] = true);
-    createComputed(() => 0, onDispose: (_) => disposedMap['computed'] = true);
-    createListSignal([], onDispose: (_) => disposedMap['list'] = true);
-    createSetSignal({}, onDispose: (_) => disposedMap['set'] = true);
-    createMapSignal({}, onDispose: (_) => disposedMap['map'] = true);
-    createQueueSignal(Queue(), onDispose: (_) => disposedMap['queue'] = true);
-    createAsyncSignal(
-      AsyncState.data(0),
-      onDispose: (_) => disposedMap['async'] = true,
-    );
-    createFutureSignal(
-      () async => 0,
-      onDispose: (_) => disposedMap['future'] = true,
-    );
-    createStreamSignal(
-      () => Stream.value(0),
-      onDispose: (_) => disposedMap['stream'] = true,
-    );
-    createComputedAsync(
-      () async => 0,
-      onDispose: (_) => disposedMap['computedAsync'] = true,
-    );
-    createComputedFrom(
-      [signal(0)],
-      (args) async => 0,
-      onDispose: (_) => disposedMap['computedFrom'] = true,
-    );
+    createSignal(0).onDispose(() => disposedMap['signal'] = true);
+    createComputed(() => 0).onDispose(() => disposedMap['computed'] = true);
+    createListSignal([]).onDispose(() => disposedMap['list'] = true);
+    createSetSignal({}).onDispose(() => disposedMap['set'] = true);
+    createMapSignal({}).onDispose(() => disposedMap['map'] = true);
+    createQueueSignal(Queue()).onDispose(() => disposedMap['queue'] = true);
+    createAsyncSignal(AsyncState.data(0))
+        .onDispose(() => disposedMap['async'] = true);
+    createFutureSignal(() async => 0)
+        .onDispose(() => disposedMap['future'] = true);
+    createStreamSignal(() => Stream.value(0))
+        .onDispose(() => disposedMap['stream'] = true);
+    createComputedAsync(() async => 0)
+        .onDispose(() => disposedMap['computedAsync'] = true);
+    createComputedFrom([signal(0)], (args) async => 0)
+        .onDispose(() => disposedMap['computedFrom'] = true);
   }
 }
 
