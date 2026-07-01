@@ -65,22 +65,9 @@ abstract class Controller implements Disposable {
   @protected
   FutureSignal<V> createComputedAsync<V>(
     Future<V> Function() fn, {
-    V? initialValue,
-    String? debugLabel,
-    List<ReadonlySignal<dynamic>> dependencies = const [],
-    bool lazy = true,
+    AsyncSignalOptions<V>? options,
   }) {
-    return _register(
-      computedAsync<V>(
-        fn,
-        options: AsyncSignalOptions(
-          name: debugLabel,
-          initialValue: initialValue,
-          lazy: lazy,
-          dependencies: dependencies,
-        ),
-      ),
-    );
+    return _register(computedAsync<V>(fn, options: options));
   }
 
   /// Creates a future-based signal.
@@ -105,7 +92,6 @@ abstract class Controller implements Disposable {
   @protected
   AsyncSignal<V> createAsyncSignal<V>(
     AsyncState<V> value, {
-
     AsyncSignalOptions<V>? options,
   }) {
     return _register(asyncSignal<V>(value, options: options));

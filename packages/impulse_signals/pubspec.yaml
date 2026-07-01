@@ -1,6 +1,6 @@
 name: impulse_signals
 description: "An integration of signals into the impulse_flutter package."
-version: 0.5.0
+version: 0.5.1
 homepage: https://github.com/Yoeri-z/impulse
 issue_tracker: https://github.com/Yoeri-z/impulse/issues
 topics:
