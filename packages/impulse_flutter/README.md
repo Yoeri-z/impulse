@@ -71,20 +71,20 @@ class CounterPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 3. Make the widget depend on state
-    final counter = context.use(counterRef);
-
     return Scaffold(
       appBar: AppBar(title: const Text('Impulse Counter Example')),
       body: Center(
         child: Text(
-          'Count: ${counter.count}',
+          // 3. Make the widget depend on state
+          // a widget can hold at most one dependency per reference
+          // calling this multiple times has (basically) no effect on performance
+          'Count: ${context.use(counterRef).count}',
           style: Theme.of(context).textTheme.headlineMedium,
         ),
       ),
       floatingActionButton: FloatingActionButton(
         // 4. Use .read(context) to read the state without creating a widget dependency
-        onPressed: () => context.ref(counterRef).increment(),
+        onPressed: () => context.read(counterRef).increment(),
         child: const Icon(Icons.add),
       ),
     );
@@ -215,6 +215,10 @@ ResultSelector(
 
 ```
 
+For code hygiene it is prefered to use these widgets over the `context.use` method. These widgets are more explicit and readable. They also localize rebuilds which can have a noticable effect on performance in some cases.
+
+For small widgets `context.use` is fine and might even be prefered.
+
 ## Handling errors
 
 Impulse includes a functional error-handling utility to deal with operations that might fail (e.g., network requests, file I/O).
@@ -244,9 +248,9 @@ void main() async {
 
 ## Memory Management
 
-Impulse automatically handles the lifecycle of state objects using reference counting:
+Impulse automatically handles the lifecycle of state objects using reference counting if your reference is made with `Ref` or `FamilyRef`:
 
-1. When a widget retrieves an object via `ref.use(context)`, the object's reference count is incremented.
+1. When a widget retrieves an object via `context.use(ref)`, the object's reference count is incremented.
 2. If multiple widgets listen to the same reference, the count increases accordingly.
 3. When widgets are popped or unmounted from the screen, the count is decremented.
 4. When the reference count reaches zero, the object is automatically disposed of (calling `dispose()` if it implements `ChangeNotifier` or `Disposable`) and dropped from the store.
@@ -254,9 +258,10 @@ Impulse automatically handles the lifecycle of state objects using reference cou
 ```dart
 final appThemeRef = Ref(
   (store) => AppTheme(),
-  keepAlive: true, // Remains in memory indefinitely
 );
 ```
+
+If you don't want this behavior consider using a `SingletonRef` or a `FactoryRef`
 
 ---
 

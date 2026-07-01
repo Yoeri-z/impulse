@@ -308,11 +308,11 @@ void main() async {
       return await cache.loadSessionData();
     },
     store: $store,
-    ref: tempCacheRef(),
+    ref: tempCacheRef,
   );
 
   // Outside the scope, tempCacheRef has been automatically released and disposed!
-  print($store.exists(tempCacheRef())); // false
+  print($store.exists(tempCacheRef)); // false
 }
 ```
 
