@@ -340,8 +340,8 @@ When you call `store.get(ref)` or `store.watch(ref)`:
 
 ## See also
 
-- [impulse_flutter](https://github.com/Yoeri-z/impulse/blob/main/packages/impulse_flutter/README.md) for a flutter integration using this package.
-- [impulse_signals](https://github.com/Yoeri-z/impulse/blob/main/packages/impulse_signals/README.md) for a signals addon to this package.
+- [impulse_flutter](https://pub.dev/packages/impulse_flutter) for a flutter integration using this package.
+- [impulse_signals](https://pub.dev/packages/impulse_signals) for a signals addon to this package.
 - [API reference](https://pub.dev/documentation/impulse/latest/) for a detailed description of all API points.
 
 ## License

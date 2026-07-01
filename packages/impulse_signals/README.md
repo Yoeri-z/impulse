@@ -61,8 +61,8 @@ print('Retrieved value $value');
 
 ## See also
 
-- [impulse](https://github.com/Yoeri-z/impulse/blob/main/packages/impulse/README.md) for core concepts and advanced usage.
-- [impulse_flutter](https://github.com/Yoeri-z/impulse/blob/main/packages/impulse_flutter/README.md) for Flutter integration.
+- [impulse](https://pub.dev/packages/impulse) for core concepts and advanced usage.
+- [impulse_flutter](https://pub.dev/packages/impulse_flutter) for Flutter integration.
 - [API reference](https://pub.dev/documentation/impulse_signals/latest/) for a detailed description of all API points.
 
 ## License

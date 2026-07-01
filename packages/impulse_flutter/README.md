@@ -366,8 +366,8 @@ void main() {
 
 ## See Also
 
-- [impulse](https://github.com/Yoeri-z/impulse/blob/main/packages/impulse/README.md) for core concepts and advanced usage.
-- [impulse_signals](https://github.com/Yoeri-z/impulse/blob/main/packages/impulse_signals/README.md) for signals integration.
+- [impulse](https://pub.dev/packages/impulse) for core concepts and advanced usage.
+- [impulse_signals](https://pub.dev/packages/impulse_signals) for signals integration.
 - [API reference](https://pub.dev/documentation/impulse_flutter/latest/) for a detailed description of all API points.
 
 ## License
