@@ -1,5 +1,6 @@
 ## 0.5.1
 - Made new signal `AsyncOptions` a parameter on `createComputedAsync` (this was forgotten in version `0.4.0`)
+- Made `Controller.disposed` a getter instead of a prop
 
 ## 0.5.0
 - Removed all the onDispose callbacks. Use `signal.onDispose` instead to register callbacks.

@@ -28,16 +28,21 @@ class AllSignalsController extends Controller {
     createSetSignal({}).onDispose(() => disposedMap['set'] = true);
     createMapSignal({}).onDispose(() => disposedMap['map'] = true);
     createQueueSignal(Queue()).onDispose(() => disposedMap['queue'] = true);
-    createAsyncSignal(AsyncState.data(0))
-        .onDispose(() => disposedMap['async'] = true);
-    createFutureSignal(() async => 0)
-        .onDispose(() => disposedMap['future'] = true);
-    createStreamSignal(() => Stream.value(0))
-        .onDispose(() => disposedMap['stream'] = true);
-    createComputedAsync(() async => 0)
-        .onDispose(() => disposedMap['computedAsync'] = true);
-    createComputedFrom([signal(0)], (args) async => 0)
-        .onDispose(() => disposedMap['computedFrom'] = true);
+    createAsyncSignal(
+      AsyncState.data(0),
+    ).onDispose(() => disposedMap['async'] = true);
+    createFutureSignal(
+      () async => 0,
+    ).onDispose(() => disposedMap['future'] = true);
+    createStreamSignal(
+      () => Stream.value(0),
+    ).onDispose(() => disposedMap['stream'] = true);
+    createComputedAsync(
+      () async => 0,
+    ).onDispose(() => disposedMap['computedAsync'] = true);
+    createComputedFrom([
+      signal(0),
+    ], (args) async => 0).onDispose(() => disposedMap['computedFrom'] = true);
   }
 }
 
@@ -113,6 +118,9 @@ void main() {
       for (final meta in signals) {
         expect(meta.signal.disposed, isFalse);
       }
+
+      // this is necessarry because test with coverage initializes all future signals
+      await Future.microtask(() async {});
 
       allController.dispose();
 

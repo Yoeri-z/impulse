@@ -28,8 +28,10 @@ class SignalMetaData<T> {
 /// A base class for controllers that manage the lifecycle of multiple signals and effects.
 /// Controllers implement [Disposable], allowing them to be automatically cleaned up by Impulse.
 abstract class Controller implements Disposable {
-  /// Whether this controller has been disposed.
-  bool disposed = false;
+  bool _disposed = false;
+
+  /// Whether or not this controller has been disposed.
+  bool get disposed => _disposed;
 
   final _signals = HashMap.of(<int, SignalMetaData>{});
   final _effects = <EffectCleanup>[];
@@ -174,6 +176,6 @@ abstract class Controller implements Disposable {
   @override
   void dispose() {
     clearSignalsAndEffects();
-    disposed = true;
+    _disposed = true;
   }
 }
