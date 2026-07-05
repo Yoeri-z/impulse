@@ -24,7 +24,6 @@ class ImpulseBox<T> extends ImpulseNotifier {
 
   void Function()? _cancelSubscription;
   bool uninitialized = true;
-  bool disposed = false;
   bool _isEvaluating = false;
 
   /// Exposes the internal [_value] of this [ImpulseBox]
@@ -167,7 +166,6 @@ class ImpulseBox<T> extends ImpulseNotifier {
     }
 
     final targets = _dependencies.toList();
-
     _dependencies.clear();
 
     for (final dependency in targets) {
@@ -177,7 +175,6 @@ class ImpulseBox<T> extends ImpulseNotifier {
   }
 
   void _invalidateDependents() {
-    // this avoids concurrent modifications
     final targets = _dependents.toList();
     _dependents.clear();
 
@@ -199,7 +196,6 @@ class ImpulseBox<T> extends ImpulseNotifier {
     _teardown();
     _invalidateDependents();
 
-    disposed = true;
     super.dispose();
   }
 }
@@ -207,6 +203,10 @@ class ImpulseBox<T> extends ImpulseNotifier {
 /// A base class for objects that implement [ImpulseListenable] and [Disposable].
 class ImpulseNotifier implements ImpulseListenable, Disposable {
   final _listeners = <Listener>{};
+  bool _disposed = false;
+
+  /// Wether or not this [ImpulseNotifier] is disposed.
+  bool get disposed => _disposed;
 
   @override
   void addListener(Listener listener) => _listeners.add(listener);
@@ -218,13 +218,14 @@ class ImpulseNotifier implements ImpulseListenable, Disposable {
   @protected
   @visibleForTesting
   void notify() {
-    for (var listener in _listeners) {
-      listener();
+    for (var listener in _listeners.toList()) {
+      if (_listeners.contains(listener)) listener();
     }
   }
 
   @override
   void dispose() {
     _listeners.clear();
+    _disposed = true;
   }
 }

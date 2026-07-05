@@ -1,3 +1,8 @@
+## 0.6.0
+- Jumped multiple versions to sync up with the other packages.
+- Added `Task` and `taskRef`.
+- Added `disposed` flag to `ImpulseNotifier`.
+
 ## 0.3.0
 
 - Simplified reference creation: `Ref`, `FactoryRef`, and `SingletonRef` now directly inherit from `ImpulseReference`.

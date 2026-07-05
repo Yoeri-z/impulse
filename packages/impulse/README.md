@@ -120,6 +120,47 @@ final profileA = store.get(userProfileRef('Alice'));
 final profileB = store.get(userProfileRef('Bob'));
 ```
 
+#### 5. `taskRef<T>` (Handling futures)
+
+`taskRef` is a function that returns a `Ref` with a `Task<T>` object. A `Task<T>` is a special notifier that wrapps an async call with a neat interface.
+```dart
+final taskRef = taskRef((store) async => await getUser(store.get(userId)));
+
+final task = store.get(taskRef)
+
+// task exposes various flags that should be familiar.
+task.isLoading;
+task.hasValue;
+task.hasError;
+task.value;
+task.error;
+task.stackTrace;
+
+// to refresh without discarding the old value or error
+task.refresh();
+
+// to reload, discarding old value or error
+task.reload();
+```
+You may only use the store to get other references before introducing an async gap.
+```dart
+// this is not allowed
+taskRef((store) async{  
+  await doFoo();
+  
+  return await getUser(store.get(idRef));
+});
+
+
+// this is allowed
+taskRef((store) async{  
+  final userId = store.get(idRef);
+
+  await doFoo();
+  
+  return await getUser(userId);
+});
+```
 ---
 
 ## `ImpulseNotifier` and error handling

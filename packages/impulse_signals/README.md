@@ -62,7 +62,7 @@ print('Retrieved value $value');
 ## See also
 
 - [impulse](https://pub.dev/packages/impulse) for core concepts and advanced usage.
-- [impulse_flutter](https://pub.dev/packages/impulse_flutter) for Flutter integration.
+- [impulse_flutter](https://pub.dev/packages/impulse_flutter) for a full documentation of `impulse` and how to use it in Flutter.
 - [API reference](https://pub.dev/documentation/impulse_signals/latest/) for a detailed description of all API points.
 
 ## License

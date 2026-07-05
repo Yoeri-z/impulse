@@ -1,3 +1,7 @@
+## 0.6.0
+- Bumped dependency package versions.
+- Jumped versions to sync up with the other packages
+
 ## 0.4.0
 - Made `context.read` use get the `StoreScope` widget instead of depending.
 - Renamed named argument `selector` to `select` in `Selector` widget.

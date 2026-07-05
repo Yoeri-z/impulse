@@ -125,7 +125,7 @@ final authServiceRef = Ref(
 Caches a single instance of `T` in the store. By default, it is dropped from the store when its reference count reaches zero.
 
 ```dart
-final authServiceRef = Ref(
+final authServiceRef = SingletonRef(
   (store) => AuthService(),
   dispose: (service) => service.cleanup(), // Optional manual cleanup callback
 );
@@ -150,6 +150,48 @@ Does not cache instances. It evaluates the creation callback and returns a new i
 
 ```dart
 final uuidRef = FactoryRef((store) => const Uuid().v4());
+```
+
+#### 5. `taskRef<T>` (Handling futures)
+
+`taskRef` is a function that returns a `Ref` with a `Task<T>` object. A `Task<T>` is a special notifier that wrapps an async call with a neat interface.
+```dart
+final taskRef = taskRef((store) async => await getUser(store.get(userId)));
+
+final task = store.get(taskRef)
+
+// task exposes various flags that should be familiar.
+task.isLoading;
+task.hasValue;
+task.hasError;
+task.value;
+task.error;
+task.stackTrace;
+
+// to refresh without discarding the old value or error
+task.refresh();
+
+// to reload, discarding old value or error
+task.reload();
+```
+You may only use the store to get other references before introducing an async gap.
+```dart
+// this is not allowed
+taskRef((store) async{  
+  await doFoo();
+  
+  return await getUser(store.get(idRef));
+});
+
+
+// this is allowed
+taskRef((store) async{  
+  final userId = store.get(idRef);
+
+  await doFoo();
+  
+  return await getUser(userId);
+});
 ```
 
 ---
@@ -177,11 +219,14 @@ Retrieves the state object without registering a dependency. The widget will not
 ```dart
 ElevatedButton(
   onPressed: () {
-    context.use(authControllerRef).logout();
+    context.read(authControllerRef).logout();
   },
   child: const Text('Log Out'),
 )
 ```
+
+| A `Ref` or `FamilyRef` read without ever being used will trigger an error when running in debug mode since it is considered a memory leak.
+| If you encounter a situation where this is required, consider using a `SingletonRef` instead.
 
 ---
 
