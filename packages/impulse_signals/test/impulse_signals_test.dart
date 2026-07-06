@@ -1,7 +1,11 @@
 import 'dart:collection';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:impulse_signals/impulse_signals.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockNotifier with Mock implements ChangeNotifier {}
 
 class TestController extends Controller {
   TestController() {
@@ -232,5 +236,73 @@ void main() {
         expect(output, equals('value: data'));
       },
     );
+  });
+
+  group('Reactivity delegate', () {
+    late Store store;
+
+    setUp(() {
+      store = createStore();
+    });
+
+    tearDown(() {
+      store.reset();
+    });
+
+    test('excempts signals', () {
+      final notifierRef = Ref((_) => signal(0));
+      int notifyCount = 0;
+
+      store.watch(notifierRef, (_) => notifyCount++);
+
+      expect(notifyCount, 0);
+
+      store.get(notifierRef).value++;
+
+      expect(notifyCount, 0);
+    });
+
+    test('includes notifiers', () {
+      final notifierRef = Ref((_) => ValueNotifier(0));
+      int notifyCount = 0;
+
+      store.watch(notifierRef, (_) => notifyCount++);
+
+      expect(notifyCount, 0);
+
+      store.get(notifierRef).value++;
+
+      expect(notifyCount, 1);
+    });
+
+    test('Disposes signals', () {
+      final sign = signal(0);
+      final ref = Ref((_) => sign);
+
+      store.init(ref);
+      expect(sign.disposed, isFalse);
+      store.drop(ref);
+      expect(sign.disposed, isTrue);
+    });
+
+    test('Disposes Controllers', () {
+      final control = TestController();
+      final ref = Ref((_) => control);
+
+      store.init(ref);
+      expect(control.disposed, isFalse);
+      store.drop(ref);
+      expect(control.disposed, isTrue);
+    });
+
+    test('Disposes ChangeNotifiers', () {
+      final notif = MockNotifier();
+      final ref = Ref((_) => notif);
+
+      store.init(ref);
+      verifyNever(() => notif.dispose());
+      store.drop(ref);
+      verify(() => notif.dispose()).called(1);
+    });
   });
 }

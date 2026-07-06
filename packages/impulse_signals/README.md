@@ -6,8 +6,6 @@
 
 Impulse extension for [`signals`](https://dartsignals.dev/) by Rody Davis. This package provides a `Controller` class that simplifies managing the lifecycle of multiple signals and effects, similar to `SignalsMixin`. It also exports `impulse_flutter` and `signals_flutter` so everything is neatly provided in a single library.
 
-> The package is currently being implemented in some production-level code to validate its real-world use. It will hit `1.0` after this is complete.
-
 ## Features
 
 - **Controller Base Class:** Group related signals and effects together.
@@ -16,34 +14,83 @@ Impulse extension for [`signals`](https://dartsignals.dev/) by Rody Davis. This 
 
 ## Getting Started
 
-Add `impulse_signals` to your `pubspec.yaml`:
+Add `impulse_signals`:
 
-```yaml
-dependencies:
-  impulse_signals: latest
 ```
+flutter pub add impulse_signals
+```
+
+This readme is very brief and assumes you already know how `impulse_flutter` works. Read the `impulse_flutter` documentation [here](https://pub.dev/packages/impulse_flutter).
 
 ## Usage Example
 
 ```dart
-final themeControllerRef = Ref((store) => ThemeController());
+// 1. Define a reference to a Controller
+final counterRef = Ref((store) => CounterController());
 
-class ThemeController extends Controller {
-  // createSignal registers the signal for automatic disposal
-  late final themeMode = createSignal(ThemeMode.system);
-  late final seedColor = createSignal<Color>(Colors.deepPurple);
+// 2. Define a controller
+class CounterController extends Controller {
+  // 3. create various singals using createX functions
+  late final count = createSignal(0);
+  late final countEven = createComputed(() => count.value % 2 == 0);
 
-  // createComputed registers the computed signal for automatic disposal
-  late final colorScheme = createComputed(() =>
-    ColorScheme.fromSeed(seedColor: seedColor.value, brightness: Brightness.light)
-  );
-
-  void setThemeMode(ThemeMode mode) => themeMode.value = mode;
-  void setSeedColor(Color color) => seedColor.value = color;
+  void increment() => count.value++;
 }
+
+void main() {
+  runApp(
+    // 4. Wrap your application in a StoreScope
+    const StoreScope(child: MyApp()),
+  );
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(home: CounterPage());
+  }
+}
+
+class CounterPage extends SignalWidget {
+  const CounterPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // 5. Depend on the controller
+    final controller = context.use(counterRef);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Impulse Counter Example')),
+      body: Center(
+        child: Column(
+          children: [
+            // 6. read signals from the controller
+            Text(
+              'Count: ${controller.count.value}',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            Text(
+              'Count is ${controller.countEven.value ? 'even' : 'odd'}.',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: controller.increment,
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
 ```
 
-The package also changes `impulse`'s method to work with errors to use `signal`'s `AsyncError` class for the `Result<T>` type.
+## Modified error handling
+
+The package changes `impulse`'s method to work with errors to use `signal`'s `AsyncError` class for the `Result<T>` type.
 
 ```dart
 final (value, err) = attempt(() => myApiCall(...));
@@ -58,6 +105,10 @@ if(err != null){
 // value is value on succes
 print('Retrieved value $value');
 ```
+
+## Modified reactivity
+
+The package modifies how the store reacts to `ChangeNotifier`. If a value is a signal reactivity is disabled. This means it is safe to provide signals using `Ref`. It also automatically disposes signals whenever the `Ref` gets disposed. Behavior regarding `ChangeNotifiers` is otherwise unchanged and will behave exactly the same as it does in `signals_flutter`.
 
 ## See also
 

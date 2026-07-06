@@ -8,8 +8,6 @@ Easy and simple state management solution that mainly functions as a dependency 
 
 Impulse provides a lightweight way to manage shared state and dependencies using a central `Store` and type-safe `References`.
 
-> The package is currently being implemented in some production-level code to validate its real-world use. It will hit `1.0` after this is complete.
-
 ## Quick start
 
 Add Impulse to your project:
@@ -160,6 +158,31 @@ taskRef((store) async{
   
   return await getUser(userId);
 });
+```
+
+#### 6. `streamRef<T>` (Handling streams)
+
+`streamRef` is a function that returns a `Ref` with a `StreamTask<T>` object. A `StreamTask<T>` wraps a subscription to a stream and exposes its state reactively.
+
+```dart
+final chatMessagesRef = streamRef((store) => api.watchMessages(store.get(roomIdRef)));
+
+final task = store.get(chatMessagesRef);
+
+// task exposes various flags that should be familiar.
+task.isLoading;
+task.hasValue;
+task.hasError;
+task.isDone;      // True if the underlying stream has closed
+task.value;
+task.error;
+task.stackTrace;
+
+// to refresh (re-subscribe) without discarding the old value or error
+task.refresh();
+
+// to reload (re-subscribe), immediately discarding old value or error
+task.reload();
 ```
 ---
 

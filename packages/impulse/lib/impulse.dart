@@ -7,4 +7,4 @@ export 'src/interfaces.dart';
 export 'src/reactivity_delegate.dart';
 export 'src/reference.dart';
 export 'src/async_utils.dart';
-export 'src/task.dart';
+export 'src/async/async.dart';

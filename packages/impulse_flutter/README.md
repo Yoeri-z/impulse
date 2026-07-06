@@ -35,16 +35,7 @@ import 'package:flutter/material.dart';
 import 'package:impulse_flutter/impulse_flutter.dart';
 
 // 1. Define a reference to a state class (ChangeNotifier is supported natively)
-final counterRef = Ref((store) => CounterState());
-
-class CounterState extends ChangeNotifier {
-  int count = 0;
-
-  void increment() {
-    count++;
-    notifyListeners(); // Rebuilds any widgets listening via .of(context)
-  }
-}
+final counterRef = Ref((store) => ValueNotifier(0));
 
 void main() {
   runApp(
@@ -78,13 +69,13 @@ class CounterPage extends StatelessWidget {
           // 3. Make the widget depend on state
           // a widget can hold at most one dependency per reference
           // calling this multiple times has (basically) no effect on performance
-          'Count: ${context.use(counterRef).count}',
+          'Count: ${context.use(counterRef).value}',
           style: Theme.of(context).textTheme.headlineMedium,
         ),
       ),
       floatingActionButton: FloatingActionButton(
         // 4. Use .read(context) to read the state without creating a widget dependency
-        onPressed: () => context.read(counterRef).increment(),
+        onPressed: () => context.read(counterRef).value++,
         child: const Icon(Icons.add),
       ),
     );
@@ -194,6 +185,30 @@ taskRef((store) async{
 });
 ```
 
+#### 6. `streamRef<T>` (Handling streams)
+
+`streamRef` is a function that returns a `Ref` with a `StreamTask<T>` object. A `StreamTask<T>` wraps a subscription to a stream and exposes its state reactively.
+
+```dart
+final chatMessagesRef = streamRef((store) => api.watchMessages(store.get(roomIdRef)));
+
+final task = store.get(chatMessagesRef);
+
+// task exposes various flags that should be familiar.
+task.isLoading;
+task.hasValue;
+task.hasError;
+task.isDone;      // True if the underlying stream has closed
+task.value;
+task.error;
+task.stackTrace;
+
+// to refresh (re-subscribe) without discarding the old value or error
+task.refresh();
+
+// to reload (re-subscribe), immediately discarding old value or error
+task.reload();
+```
 ---
 
 ## Reading State in Widgets
@@ -212,7 +227,7 @@ Widget build(BuildContext context) {
 }
 ```
 
-### 2. `ref.read(context)`
+### 2. `context.read(ref)`
 
 Retrieves the state object without registering a dependency. The widget will not rebuild when the state object changes.
 

@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'reference.dart';
-import 'async_utils.dart';
-import 'box.dart';
-import 'store.dart';
+import '../reference.dart';
+import '../async_utils.dart';
+import '../box.dart';
+import '../store.dart';
 
 /// Creates a [Ref] whose value is a [Task] wrapping an asynchronous call.
 ///

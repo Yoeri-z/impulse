@@ -1,3 +1,11 @@
+## 0.6.1
+- Added [SignalsReactivityDelegate], overrode `$store` and `createStore` from `impulse_flutter`.
+  This [SignalsReactivityDelegate] keeps the [FlutterReactivityDelegate] behavior but exempts `signals` from the listener hook.
+- Added example
+
+## 0.6.0
+- Bumbed version and dependencies to math the other packages.
+
 ## 0.5.1
 - Made new signal `AsyncOptions` a parameter on `createComputedAsync` (this was forgotten in version `0.4.0`)
 - Made `Controller.disposed` a getter instead of a prop

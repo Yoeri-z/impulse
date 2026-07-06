@@ -1,3 +1,7 @@
+## 0.6.1
+- updated example and documentation
+- bumped version to match version of other packages
+
 ## 0.6.0
 - Bumped dependency package versions.
 - Jumped versions to sync up with the other packages
