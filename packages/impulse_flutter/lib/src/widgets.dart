@@ -3,7 +3,7 @@ import 'package:impulse/impulse.dart';
 
 import 'context_extensions.dart';
 
-/// binds a [ref] to itself and fires [builder] when it notifies
+/// binds itself to [ref] and fires [builder] when it notifies
 class Binder<T> extends StatelessWidget {
   /// Constructs a [Binder]
   const Binder({super.key, required this.ref, required this.builder});
@@ -69,7 +69,9 @@ class _SelectorState<T, R> extends State<Selector<T, R>> {
   }
 }
 
+/// Binds itsself to [ref] and calls the appropiate builder whenever the result selected with [selector] changes.
 class ResultSelector<T, R> extends StatelessWidget {
+  /// Binds itsself to [ref] and calls the appropiate builder whenever the result selected with [selector] changes.
   const ResultSelector({
     super.key,
     required this.ref,
@@ -95,6 +97,9 @@ class ResultSelector<T, R> extends StatelessWidget {
   /// The builder that runs when the selected property contains [Err]
   final Widget Function(BuildContext context, Err err) errBuilder;
 
+  /// An optional builder that runs whenever the result contains both a value and an error.
+  ///
+  /// If not supplied the [valueBuilder] will be used.
   final Widget Function(BuildContext context, R value, Err err)?
   valueAndErrorBuilder;
 

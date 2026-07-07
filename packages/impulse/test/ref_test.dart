@@ -278,8 +278,4 @@ void main() {
       },
     );
   });
-
-  group('AsyncRef', () {
-    ImpulseReference<AsyncCall>;
-  });
 }

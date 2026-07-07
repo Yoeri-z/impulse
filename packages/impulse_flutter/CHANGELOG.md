@@ -1,3 +1,6 @@
+## 0.6.2
+- updated dependency constraints
+
 ## 0.6.1
 - updated example and documentation
 - bumped version to match version of other packages

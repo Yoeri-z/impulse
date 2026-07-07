@@ -79,6 +79,10 @@ class StoreScope extends StatefulWidget {
     );
   }
 
+  /// Retrieve the store from [context].
+  ///
+  /// if [depend] is true (the default) the widget will be registered
+  /// as a dependent and rebuild whenever the store object gets replaced.
   static Store of(BuildContext context, {bool depend = true}) {
     final widget = depend
         ? context.dependOnInheritedWidgetOfExactType<_InheritedStore>()
@@ -158,12 +162,12 @@ class _InheritedStore extends InheritedWidget {
   _InheritedStoreElement createElement() => _InheritedStoreElement(this);
 }
 
-typedef KeyDisposal = ({Object key, VoidCallback dispose});
+typedef _KeyDisposal = ({Object key, VoidCallback dispose});
 
 class _InheritedStoreElement extends InheritedElement {
   _InheritedStoreElement(super.widget);
 
-  final _disposeHooks = HashMap<Element, List<KeyDisposal>>();
+  final _disposeHooks = HashMap<Element, List<_KeyDisposal>>();
 
   bool hasRegisteredDisposalForElement(Element element, Object key) {
     final hooks = _disposeHooks[element];
@@ -174,7 +178,7 @@ class _InheritedStoreElement extends InheritedElement {
   }
 
   void registerDisposal<T>(Element element, Object key, VoidCallback dispose) {
-    final hooks = _disposeHooks.putIfAbsent(element, () => <KeyDisposal>[]);
+    final hooks = _disposeHooks.putIfAbsent(element, () => <_KeyDisposal>[]);
 
     if (hooks.any((hook) => hook.key == key)) return;
 

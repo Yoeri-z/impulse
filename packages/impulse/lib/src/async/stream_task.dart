@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import '../reference.dart';
-import '../async_utils.dart';
+import 'async_utils.dart';
 import '../box.dart';
 import '../store.dart';
 

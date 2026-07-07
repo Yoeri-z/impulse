@@ -1,3 +1,7 @@
+## 0.6.2
+- updated dependency constraints
+- Added some getters to the `ResultExtension`
+
 ## 0.6.1
 - Added [SignalsReactivityDelegate], overrode `$store` and `createStore` from `impulse_flutter`.
   This [SignalsReactivityDelegate] keeps the [FlutterReactivityDelegate] behavior but exempts `signals` from the listener hook.
