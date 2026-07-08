@@ -57,7 +57,7 @@ void main() {
       final task = createSuccessTask(0);
       await Future.delayed(Duration.zero);
 
-      final (val, err) = task.asResult;
+      final (val, err) = task.result;
       expect(val, 0);
       expect(err, isNull);
     });
@@ -98,7 +98,7 @@ void main() {
       final task = createErrorTask();
       await Future.delayed(Duration.zero);
 
-      final (val, err) = task.asResult;
+      final (val, err) = task.result;
       expect(val, isNull);
       expect(err, isNotNull);
     });

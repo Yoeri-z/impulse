@@ -1,9 +1,12 @@
+## 0.6.3
+- Made interface for `Task` and `StreamTask`.
+
 ## 0.6.2
-- Added some getters to the `ResultExtension`
+- Added some getters to the `ResultExtension`.
 
 ## 0.6.1
-- bumped version to match version of other packages
-- added `streamRef` and `StreamTask`
+- bumped version to match version of other packages.
+- added `streamRef` and `StreamTask`.
 
 ## 0.6.0
 - Jumped multiple versions to sync up with the other packages.

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../interfaces.dart';
 import '../reference.dart';
 import 'async_utils.dart';
 import '../box.dart';
@@ -44,7 +45,7 @@ Ref<Task<T>> taskRef<T>(
 /// or [refresh] to re-run it while keeping the previous value/error visible
 /// until the new result arrives (useful for pull-to-refresh style UIs where
 /// you don't want the UI to flash back to a loading state).
-class Task<T> extends ImpulseNotifier {
+class Task<T> extends ImpulseNotifier implements ResultContainer {
   /// Create a [Task] wrapping a [call]
   Task(this.call, {this.onSuccess, this.onError}) {
     _run();
@@ -99,7 +100,8 @@ class Task<T> extends ImpulseNotifier {
 
   /// A snapshot of ([value], [error]) suitable for destructuring, e.g.
   /// `final (value, err) = task.asResult;`.
-  Result<T> get asResult =>
+  @override
+  Result<T> get result =>
       (_value, hasError ? Err(_error!, _stackTrace!) : null);
 
   Future<void> _run() async {
