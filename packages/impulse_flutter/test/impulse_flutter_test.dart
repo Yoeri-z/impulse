@@ -3,7 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:impulse_flutter/impulse_flutter.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockDependency extends Mock {
+class SimpleResultContainer<T> extends ImpulseNotifier
+    implements ResultContainer<T> {
+  SimpleResultContainer(this.result);
+
+  @override
+  Result<T> result;
+}
+
+class MockDependency with Mock {
   void onInitialize();
   void onDispose();
 }
@@ -476,6 +484,113 @@ void main() {
         expect(find.text('Both: hello and some error'), findsOneWidget);
       },
     );
+  });
+
+  group('ResultBuilder', () {
+    testWidgets('builds nothingBuilder when result is empty', (tester) async {
+      final container = SimpleResultContainer<String>(emptyResult);
+
+      await tester.pumpWidget(
+        TestApp(
+          child: ResultBuilder(
+            container: container,
+            nothingBuilder: (context) => const Text('Nothing'),
+            valueBuilder: (context, value) => Text('Value: $value'),
+            errBuilder: (context, err) => Text('Error: ${err.error}'),
+          ),
+        ),
+      );
+
+      expect(find.text('Nothing'), findsOneWidget);
+    });
+
+    testWidgets('builds valueBuilder when result has a value', (tester) async {
+      final container = SimpleResultContainer<String>(('hello', null));
+
+      await tester.pumpWidget(
+        TestApp(
+          child: ResultBuilder(
+            container: container,
+            nothingBuilder: (context) => Text('Nothing'),
+            valueBuilder: (context, value) => Text('Value: $value'),
+            errBuilder: (context, err) => Text('Error: ${err.error}'),
+          ),
+        ),
+      );
+
+      expect(find.text('Value: hello'), findsOneWidget);
+    });
+
+    testWidgets('builds errBuilder when result has an error', (tester) async {
+      final container = SimpleResultContainer<String>((
+        null,
+        Err('some error', .empty),
+      ));
+
+      await tester.pumpWidget(
+        TestApp(
+          child: ResultBuilder(
+            container: container,
+            nothingBuilder: (context) => const Text('Nothing'),
+            valueBuilder: (context, value) => Text('Value: $value'),
+            errBuilder: (context, err) => Text('Error: ${err.error}'),
+          ),
+        ),
+      );
+
+      expect(find.text('Error: some error'), findsOneWidget);
+    });
+
+    testWidgets(
+      'builds valueAndErrorBuilder when result has both and builder is provided',
+      (tester) async {
+        final container = SimpleResultContainer<String>((
+          'hello',
+          Err('some error', .empty),
+        ));
+
+        await tester.pumpWidget(
+          TestApp(
+            child: ResultBuilder(
+              container: container,
+              nothingBuilder: (context) => const Text('Nothing'),
+              valueBuilder: (context, value) => Text('Value: $value'),
+              errBuilder: (context, err) => Text('Error: ${err.error}'),
+              valueAndErrorBuilder: (context, value, err) =>
+                  Text('Both: $value and ${err.error}'),
+            ),
+          ),
+        );
+
+        expect(find.text('Both: hello and some error'), findsOneWidget);
+      },
+    );
+
+    testWidgets('rebuilds when container notifies', (tester) async {
+      final container = SimpleResultContainer<String>(emptyResult);
+
+      await tester.pumpWidget(
+        TestApp(
+          child: ResultBuilder(
+            container: container,
+            nothingBuilder: (context) => const Text('Nothing'),
+            valueBuilder: (context, value) => Text('Value: $value'),
+            errBuilder: (context, err) => Text('Error: ${err.error}'),
+            valueAndErrorBuilder: (context, value, err) =>
+                Text('Both: $value and ${err.error}'),
+          ),
+        ),
+      );
+
+      expect(find.text('Nothing'), findsOneWidget);
+
+      container.result = ('hello', null);
+      container.notify();
+
+      await tester.pump();
+
+      expect(find.text('Value: hello'), findsOneWidget);
+    });
   });
 }
 

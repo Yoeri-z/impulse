@@ -126,3 +126,74 @@ class ResultSelector<T, R> extends StatelessWidget {
     );
   }
 }
+
+/// Builder to safely destructure a [ResultContainer] like [Task] or [StreamTask].
+class ResultBuilder<T> extends StatefulWidget {
+  /// Builder to safely destructure a [ResultContainer] like [Task] or [StreamTask].
+  const ResultBuilder({
+    super.key,
+    required this.container,
+    required this.valueBuilder,
+    required this.nothingBuilder,
+    required this.errBuilder,
+    this.valueAndErrorBuilder,
+  });
+
+  /// The object containing a result of type [T]
+  final ResultContainer<T> container;
+
+  /// The builder that runs when the selected property has value [R]
+  final Widget Function(BuildContext context, T value) valueBuilder;
+
+  /// The builder that runs when the selected property is empty.
+  final Widget Function(BuildContext context) nothingBuilder;
+
+  /// The builder that runs when the selected property contains [Err]
+  final Widget Function(BuildContext context, Err err) errBuilder;
+
+  /// An optional builder that runs whenever the result contains both a value and an error.
+  ///
+  /// If not supplied the [valueBuilder] will be used.
+  final Widget Function(BuildContext context, T value, Err err)?
+  valueAndErrorBuilder;
+
+  @override
+  State<ResultBuilder<T>> createState() => _ResultBuilderState<T>();
+}
+
+class _ResultBuilderState<T> extends State<ResultBuilder<T>> {
+  void _listener() => setState(() {});
+
+  @override
+  void initState() {
+    super.initState();
+    widget.container.addListener(_listener);
+  }
+
+  @override
+  void didUpdateWidget(ResultBuilder<T> oldWidget) {
+    if (oldWidget.container != widget.container) {
+      oldWidget.container.removeListener(_listener);
+      widget.container.addListener(_listener);
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void dispose() {
+    widget.container.removeListener(_listener);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.container.result.map(
+      onNothing: () => widget.nothingBuilder(context),
+      onValue: (value) => widget.valueBuilder(context, value),
+      onError: (err) => widget.errBuilder(context, err),
+      onValueAndError: widget.valueAndErrorBuilder != null
+          ? (value, err) => widget.valueAndErrorBuilder!(context, value, err)
+          : null,
+    );
+  }
+}

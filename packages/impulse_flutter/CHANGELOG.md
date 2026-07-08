@@ -1,3 +1,6 @@
+## 0.6.3
+- added `ResultBuilder` widget
+
 ## 0.6.2
 - updated dependency constraints
 
