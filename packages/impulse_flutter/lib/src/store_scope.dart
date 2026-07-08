@@ -33,7 +33,10 @@ class StoreScope extends StatefulWidget {
 
   /// Retrieves an [ImpulseBox] from the nearest [StoreScope] ancestor.
   /// the calling [context] will be bound to the reference.
-  static ImpulseBox<T> box<T>(BuildContext context, ImpulseReference<T> ref) {
+  static ImpulseBox<T> registerDependency<T>(
+    BuildContext context,
+    ImpulseReference<T> ref,
+  ) {
     final storeElement =
         context.getElementForInheritedWidgetOfExactType<_InheritedStore>()
             as _InheritedStoreElement?;
@@ -42,10 +45,6 @@ class StoreScope extends StatefulWidget {
       throw _scopeNotFound();
     }
 
-    final storeWidget = storeElement.widget as _InheritedStore;
-
-    final box = storeWidget.store.box(ref);
-
     if (!_tryDepend(context)) {
       throw StateError(
         '`context.of` should only be called when the widget is active'
@@ -53,24 +52,20 @@ class StoreScope extends StatefulWidget {
       );
     }
 
+    final storeWidget = storeElement.widget as _InheritedStore;
+
     final element = context as Element;
 
-    if (!storeElement.hasRegisteredDisposalForElement(element, box.ref.key)) {
-      void listener() => element.markNeedsBuild();
-      void dispose() {
-        if (!box.disposed) {
-          box.removeListener(listener);
-          box.release();
-        }
-      }
+    if (!storeElement.hasRegisteredDisposalForElement(element, ref.key)) {
+      final dispose = storeWidget.store.watch(
+        ref,
+        (_) => element.markNeedsBuild(),
+      );
 
-      box.retain();
-      box.addListener(listener);
-
-      storeElement.registerDisposal(element, box.ref.key, dispose);
+      storeElement.registerDisposal(element, ref.key, dispose);
     }
 
-    return box;
+    return storeWidget.store.box(ref);
   }
 
   static StateError _scopeNotFound() {

@@ -55,7 +55,7 @@ extension BindContext on BuildContext {
   /// Binds the current widget to a [ref] from the nearest [StoreScope].
   /// The widget will automatically rebuild whenever the reference notifies of a change.
   T use<T>(ImpulseReference<T> ref) {
-    final box = StoreScope.box(this, ref);
+    final box = StoreScope.registerDependency(this, ref);
 
     return box.produce();
   }
