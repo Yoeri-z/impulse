@@ -172,7 +172,7 @@ class _InheritedStoreElement extends InheritedElement {
     return hooks.any((hook) => hook.key == key);
   }
 
-  void registerDisposal<T>(Element element, Object key, VoidCallback dispose) {
+  void registerDisposal(Element element, Object key, VoidCallback dispose) {
     final hooks = _disposeHooks.putIfAbsent(element, () => <_KeyDisposal>[]);
 
     if (hooks.any((hook) => hook.key == key)) return;

@@ -8,3 +8,4 @@ export 'src/reactivity_delegate.dart';
 export 'src/reference.dart';
 export 'src/async/async_utils.dart';
 export 'src/async/async.dart';
+export 'src/impulse_notifier.dart';

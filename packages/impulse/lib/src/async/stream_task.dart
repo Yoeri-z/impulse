@@ -1,9 +1,9 @@
 import 'dart:async';
 
+import '../impulse_notifier.dart';
 import '../reference.dart';
-import 'async_utils.dart';
-import '../box.dart';
 import '../store.dart';
+import 'async_utils.dart';
 
 /// Creates a [Ref] whose value is a [StreamTask] wrapping a subscription to
 /// a stream.

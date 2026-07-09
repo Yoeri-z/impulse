@@ -1,3 +1,6 @@
+## 0.6.4
+- Changed `ImpulseNotifier` implementation to higher performance variant (based on flutters implementation)
+
 ## 0.6.3
 - Made interface for `Task` and `StreamTask`.
 

@@ -1,8 +1,8 @@
 // ignore_for_file: null_check_on_nullable_type_parameter
 import 'package:meta/meta.dart';
 
+import 'impulse_notifier.dart';
 import 'reactivity_delegate.dart';
-import 'interfaces.dart';
 import 'reference.dart';
 import 'store.dart';
 
@@ -197,35 +197,5 @@ class ImpulseBox<T> extends ImpulseNotifier {
     _invalidateDependents();
 
     super.dispose();
-  }
-}
-
-/// A base class for objects that implement [ImpulseListenable] and [Disposable].
-class ImpulseNotifier implements ImpulseListenable, Disposable {
-  final _listeners = <Listener>{};
-  bool _disposed = false;
-
-  /// Wether or not this [ImpulseNotifier] is disposed.
-  bool get disposed => _disposed;
-
-  @override
-  void addListener(Listener listener) => _listeners.add(listener);
-
-  @override
-  void removeListener(Listener listener) => _listeners.remove(listener);
-
-  /// Notifies all registered listeners of a state change.
-  @protected
-  @visibleForTesting
-  void notify() {
-    for (var listener in _listeners.toList()) {
-      if (_listeners.contains(listener)) listener();
-    }
-  }
-
-  @override
-  void dispose() {
-    _listeners.clear();
-    _disposed = true;
   }
 }
