@@ -1,14 +1,9 @@
 {
-  "Impulse Standard Ref": {
+  "Impulse Ref": {
     "prefix": "iref",
-    "body": ["Ref((store) => ${1:ClassName}());"],
-    "description": "Create a standard global Impulse Ref and matching ChangeNotifier class",
-  },
-  "Impulse Family Ref": {
-    "prefix": "ifamily",
     "body": [
-      "FamilyRef<${1:ClassName}, ${2:ParamType}>((store, param) => $1(param));",
+      "${1:}Ref((store) => ${2:ClassName}());"
     ],
-    "description": "Create an Impulse FamilyRef with a parameter pass and a matching ChangeNotifier class",
+    "description": "Create a global Impulse Ref and instantiate a class class"
   },
 }
