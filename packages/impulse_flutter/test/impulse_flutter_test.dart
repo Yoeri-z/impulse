@@ -3,12 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:impulse_flutter/impulse_flutter.dart';
 import 'package:mocktail/mocktail.dart';
 
-class SimpleResultContainer<T> extends ImpulseNotifier
-    implements ResultContainer<T> {
-  SimpleResultContainer(this.result);
+class SimpleAsyncStateNotifier<T> extends ImpulseNotifier
+    implements AsyncStateListenable<T> {
+  SimpleAsyncStateNotifier(this.state);
 
   @override
-  Result<T> result;
+  AsyncState<T> state;
 }
 
 class MockDependency with Mock {
@@ -396,20 +396,21 @@ void main() {
     expect(find.text('1'), findsOneWidget);
   });
 
-  group('ResultSelector', () {
-    testWidgets('builds nothingBuilder when result is empty', (tester) async {
-      final ref = Ref((store) => ResultStateMock());
+  group('AsyncSelector', () {
+    testWidgets('builds loadingBuilder when state is loading', (tester) async {
+      final ref = Ref((store) => AsyncStateMock());
       final store = createStore();
 
       await tester.pumpWidget(
         TestApp(
           store: store,
-          child: ResultSelector<ResultStateMock, String>(
+          child: AsyncSelector<AsyncStateMock, String>(
             ref: ref,
-            selector: (state) => state.result,
-            nothingBuilder: (context) => const Text('Nothing'),
-            valueBuilder: (context, value) => Text('Value: $value'),
-            errBuilder: (context, err) => Text('Error: ${err.error}'),
+            selector: (state) => state.state,
+            loadingBuilder: (context, previousValue) => const Text('Nothing'),
+            dataBuilder: (context, value) => Text('Value: $value'),
+            errorBuilder: (context, err, st, previousValue) =>
+                Text('Error: $err'),
           ),
         ),
       );
@@ -417,20 +418,21 @@ void main() {
       expect(find.text('Nothing'), findsOneWidget);
     });
 
-    testWidgets('builds valueBuilder when result has a value', (tester) async {
-      final ref = Ref((store) => ResultStateMock());
+    testWidgets('builds dataBuilder when state has a value', (tester) async {
+      final ref = Ref((store) => AsyncStateMock());
       final store = createStore();
       store.get(ref).setValue('hello');
 
       await tester.pumpWidget(
         TestApp(
           store: store,
-          child: ResultSelector<ResultStateMock, String>(
+          child: AsyncSelector<AsyncStateMock, String>(
             ref: ref,
-            selector: (state) => state.result,
-            nothingBuilder: (context) => const Text('Nothing'),
-            valueBuilder: (context, value) => Text('Value: $value'),
-            errBuilder: (context, err) => Text('Error: ${err.error}'),
+            selector: (state) => state.state,
+            loadingBuilder: (context, previousValue) => const Text('Nothing'),
+            dataBuilder: (context, value) => Text('Value: $value'),
+            errorBuilder: (context, err, st, previousValue) =>
+                Text('Error: $err'),
           ),
         ),
       );
@@ -438,20 +440,21 @@ void main() {
       expect(find.text('Value: hello'), findsOneWidget);
     });
 
-    testWidgets('builds errBuilder when result has an error', (tester) async {
-      final ref = Ref((store) => ResultStateMock());
+    testWidgets('builds errorBuilder when state has an error', (tester) async {
+      final ref = Ref((store) => AsyncStateMock());
       final store = createStore();
       store.get(ref).setError('some error');
 
       await tester.pumpWidget(
         TestApp(
           store: store,
-          child: ResultSelector<ResultStateMock, String>(
+          child: AsyncSelector<AsyncStateMock, String>(
             ref: ref,
-            selector: (state) => state.result,
-            nothingBuilder: (context) => const Text('Nothing'),
-            valueBuilder: (context, value) => Text('Value: $value'),
-            errBuilder: (context, err) => Text('Error: ${err.error}'),
+            selector: (state) => state.state,
+            loadingBuilder: (context, previousValue) => const Text('Nothing'),
+            dataBuilder: (context, value) => Text('Value: $value'),
+            errorBuilder: (context, err, st, previousValue) =>
+                Text('Error: $err'),
           ),
         ),
       );
@@ -459,44 +462,45 @@ void main() {
       expect(find.text('Error: some error'), findsOneWidget);
     });
 
-    testWidgets(
-      'builds valueAndErrorBuilder when result has both and builder is provided',
-      (tester) async {
-        final ref = Ref((store) => ResultStateMock());
-        final store = createStore();
-        store.get(ref).setValueAndError('hello', 'some error');
-
-        await tester.pumpWidget(
-          TestApp(
-            store: store,
-            child: ResultSelector<ResultStateMock, String>(
-              ref: ref,
-              selector: (state) => state.result,
-              nothingBuilder: (context) => const Text('Nothing'),
-              valueBuilder: (context, value) => Text('Value: $value'),
-              errBuilder: (context, err) => Text('Error: ${err.error}'),
-              valueAndErrorBuilder: (context, value, err) =>
-                  Text('Both: $value and ${err.error}'),
-            ),
-          ),
-        );
-
-        expect(find.text('Both: hello and some error'), findsOneWidget);
-      },
-    );
-  });
-
-  group('ResultBuilder', () {
-    testWidgets('builds nothingBuilder when result is empty', (tester) async {
-      final container = SimpleResultContainer<String>(emptyResult);
+    testWidgets('builds errorBuilder with previousValue when state has both', (
+      tester,
+    ) async {
+      final ref = Ref((store) => AsyncStateMock());
+      final store = createStore();
+      store.get(ref).setValueAndError('hello', 'some error');
 
       await tester.pumpWidget(
         TestApp(
-          child: ResultBuilder(
-            container: container,
-            nothingBuilder: (context) => const Text('Nothing'),
-            valueBuilder: (context, value) => Text('Value: $value'),
-            errBuilder: (context, err) => Text('Error: ${err.error}'),
+          store: store,
+          child: AsyncSelector<AsyncStateMock, String>(
+            ref: ref,
+            selector: (state) => state.state,
+            loadingBuilder: (context, previousValue) => const Text('Nothing'),
+            dataBuilder: (context, value) => Text('Value: $value'),
+            errorBuilder: (context, err, st, previousValue) =>
+                Text('Both: $previousValue and $err'),
+          ),
+        ),
+      );
+
+      expect(find.text('Both: hello and some error'), findsOneWidget);
+    });
+  });
+
+  group('AsyncBuilder', () {
+    testWidgets('builds loadingBuilder when state is loading', (tester) async {
+      final notifier = SimpleAsyncStateNotifier<String>(
+        const AsyncState.loading(),
+      );
+
+      await tester.pumpWidget(
+        TestApp(
+          child: AsyncBuilder(
+            notifier: notifier,
+            loadingBuilder: (context, previousValue) => const Text('Nothing'),
+            dataBuilder: (context, value) => Text('Value: $value'),
+            errorBuilder: (context, err, st, previousValue) =>
+                Text('Error: $err'),
           ),
         ),
       );
@@ -504,16 +508,19 @@ void main() {
       expect(find.text('Nothing'), findsOneWidget);
     });
 
-    testWidgets('builds valueBuilder when result has a value', (tester) async {
-      final container = SimpleResultContainer<String>(('hello', null));
+    testWidgets('builds dataBuilder when state has a value', (tester) async {
+      final notifier = SimpleAsyncStateNotifier<String>(
+        const AsyncState.data('hello'),
+      );
 
       await tester.pumpWidget(
         TestApp(
-          child: ResultBuilder(
-            container: container,
-            nothingBuilder: (context) => Text('Nothing'),
-            valueBuilder: (context, value) => Text('Value: $value'),
-            errBuilder: (context, err) => Text('Error: ${err.error}'),
+          child: AsyncBuilder(
+            notifier: notifier,
+            loadingBuilder: (context, previousValue) => const Text('Nothing'),
+            dataBuilder: (context, value) => Text('Value: $value'),
+            errorBuilder: (context, err, st, previousValue) =>
+                Text('Error: $err'),
           ),
         ),
       );
@@ -521,19 +528,19 @@ void main() {
       expect(find.text('Value: hello'), findsOneWidget);
     });
 
-    testWidgets('builds errBuilder when result has an error', (tester) async {
-      final container = SimpleResultContainer<String>((
-        null,
-        Err('some error', .empty),
-      ));
+    testWidgets('builds errorBuilder when state has an error', (tester) async {
+      final notifier = SimpleAsyncStateNotifier<String>(
+        AsyncState.error('some error', StackTrace.empty),
+      );
 
       await tester.pumpWidget(
         TestApp(
-          child: ResultBuilder(
-            container: container,
-            nothingBuilder: (context) => const Text('Nothing'),
-            valueBuilder: (context, value) => Text('Value: $value'),
-            errBuilder: (context, err) => Text('Error: ${err.error}'),
+          child: AsyncBuilder(
+            notifier: notifier,
+            loadingBuilder: (context, previousValue) => const Text('Nothing'),
+            dataBuilder: (context, value) => Text('Value: $value'),
+            errorBuilder: (context, err, st, previousValue) =>
+                Text('Error: $err'),
           ),
         ),
       );
@@ -541,51 +548,53 @@ void main() {
       expect(find.text('Error: some error'), findsOneWidget);
     });
 
-    testWidgets(
-      'builds valueAndErrorBuilder when result has both and builder is provided',
-      (tester) async {
-        final container = SimpleResultContainer<String>((
-          'hello',
-          Err('some error', .empty),
-        ));
-
-        await tester.pumpWidget(
-          TestApp(
-            child: ResultBuilder(
-              container: container,
-              nothingBuilder: (context) => const Text('Nothing'),
-              valueBuilder: (context, value) => Text('Value: $value'),
-              errBuilder: (context, err) => Text('Error: ${err.error}'),
-              valueAndErrorBuilder: (context, value, err) =>
-                  Text('Both: $value and ${err.error}'),
-            ),
-          ),
-        );
-
-        expect(find.text('Both: hello and some error'), findsOneWidget);
-      },
-    );
-
-    testWidgets('rebuilds when container notifies', (tester) async {
-      final container = SimpleResultContainer<String>(emptyResult);
+    testWidgets('builds errorBuilder with previousValue when state has both', (
+      tester,
+    ) async {
+      final notifier = SimpleAsyncStateNotifier<String>(
+        AsyncState.error(
+          'some error',
+          StackTrace.empty,
+          previousValue: 'hello',
+        ),
+      );
 
       await tester.pumpWidget(
         TestApp(
-          child: ResultBuilder(
-            container: container,
-            nothingBuilder: (context) => const Text('Nothing'),
-            valueBuilder: (context, value) => Text('Value: $value'),
-            errBuilder: (context, err) => Text('Error: ${err.error}'),
-            valueAndErrorBuilder: (context, value, err) =>
-                Text('Both: $value and ${err.error}'),
+          child: AsyncBuilder(
+            notifier: notifier,
+            loadingBuilder: (context, previousValue) => const Text('Nothing'),
+            dataBuilder: (context, value) => Text('Value: $value'),
+            errorBuilder: (context, err, st, previousValue) =>
+                Text('Both: $previousValue and $err'),
+          ),
+        ),
+      );
+
+      expect(find.text('Both: hello and some error'), findsOneWidget);
+    });
+
+    testWidgets('rebuilds when notifier notifies', (tester) async {
+      final notifier = SimpleAsyncStateNotifier<String>(
+        const AsyncState.loading(),
+      );
+
+      await tester.pumpWidget(
+        TestApp(
+          child: AsyncBuilder(
+            notifier: notifier,
+            loadingBuilder: (context, previousValue) => const Text('Nothing'),
+            dataBuilder: (context, value) => Text('Value: $value'),
+            errorBuilder: (context, err, st, previousValue) =>
+                Text('Error: $err'),
           ),
         ),
       );
 
       expect(find.text('Nothing'), findsOneWidget);
 
-      container.result = ('hello', null);
-      container.notify();
+      notifier.state = const AsyncState.data('hello');
+      notifier.notify();
 
       await tester.pump();
 
@@ -603,26 +612,30 @@ class StateMock extends ImpulseNotifier {
   }
 }
 
-class ResultStateMock extends ImpulseNotifier {
-  Result<String> result = (null, null);
+class AsyncStateMock extends ImpulseNotifier {
+  AsyncState<String> state = const AsyncState.loading();
 
   void setNothing() {
-    result = (null, null);
+    state = const AsyncState.loading();
     notify();
   }
 
   void setValue(String value) {
-    result = (value, null);
+    state = AsyncState.data(value);
     notify();
   }
 
   void setError(Object error) {
-    result = (null, Err(error, StackTrace.fromString('')));
+    state = AsyncState.error(error, StackTrace.fromString(''));
     notify();
   }
 
   void setValueAndError(String value, Object error) {
-    result = (value, Err(error, StackTrace.fromString('')));
+    state = AsyncState.error(
+      error,
+      StackTrace.fromString(''),
+      previousValue: value,
+    );
     notify();
   }
 }
