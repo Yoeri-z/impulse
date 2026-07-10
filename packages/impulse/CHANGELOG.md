@@ -1,3 +1,6 @@
+## 0.8.0
+- Removed `AsyncResult`
+
 ## 0.7.0
 - Changed `ImpulseNotifier` implementation to higher performance variant (based on flutters implementation)
 - Renamed: `Task` to `FutureNotifier`, `StreamTask` to `StreamNotifier`, `ResultContainer` to `ResultListenable` and 

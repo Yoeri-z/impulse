@@ -3,31 +3,12 @@ import 'package:meta/meta.dart';
 /// Attempts to execute the asynchronous [call] and returns its result.
 ///
 /// Returns an [AsyncData] if the call succeeds, or an [AsyncFailure] if it fails.
-Future<AsyncResult<T>> attempt<T>(Future<T> Function() call) async {
+Future<AsyncState<T>> attempt<T>(Future<T> Function() call) async {
   try {
     return AsyncData(await call());
   } catch (e, st) {
     return AsyncFailure(e, st);
   }
-}
-
-/// Represents the result of an asynchronous operation, containing either
-/// a success value or a failure error.
-sealed class AsyncResult<T> {
-  /// The value of the asynchronous operation, if available.
-  T? get value;
-
-  /// The error of the asynchronous operation, if available.
-  Object? get error;
-
-  /// The stack trace of the error, if available.
-  StackTrace? get stackTrace;
-
-  /// Whether the asynchronous operation has a value.
-  bool get hasValue => value != null;
-
-  /// Whether the asynchronous operation failed with an error.
-  bool get hasError => error != null;
 }
 
 /// Represents the state of an asynchronous operation.
@@ -108,7 +89,7 @@ class AsyncLoading<T> extends AsyncState<T> {
 }
 
 /// Represents a successfully completed asynchronous operation with a value.
-class AsyncData<T> extends AsyncState<T> implements AsyncResult<T> {
+class AsyncData<T> extends AsyncState<T> {
   /// Creates an [AsyncData] state with the given [value].
   const AsyncData(this.value);
 
@@ -126,7 +107,7 @@ class AsyncData<T> extends AsyncState<T> implements AsyncResult<T> {
 }
 
 /// Represents a failed asynchronous operation.
-class AsyncFailure<T> extends AsyncState<T> implements AsyncResult<T> {
+class AsyncFailure<T> extends AsyncState<T> {
   /// Creates an [AsyncFailure] state with the given [error], [stackTrace], and
   /// optionally a [previousValue].
   const AsyncFailure(this.error, this.stackTrace, {this.previousValue});
