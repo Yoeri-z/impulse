@@ -253,4 +253,38 @@ void main() {
       expect(taskInstance, isA<FutureNotifier<String>>());
     });
   });
+
+  group('unpack', () {
+    test('Unpacks AsyncLoading', () {
+      final state1 = AsyncLoading();
+      final state2 = AsyncLoading(previousValue: 0);
+
+      expect(state1.unpacked, equals((null, null)));
+      expect(state2.unpacked, equals((0, null)));
+    });
+
+    test('Unpacks AsyncData', () {
+      final state = AsyncData(0);
+
+      expect(state.unpacked, equals((0, null)));
+    });
+
+    test('Unpacks AsyncFailure', () {
+      final state = AsyncFailure(0, StackTrace.empty);
+
+      expect(state.unpacked, equals((null, state)));
+    });
+
+    test('Unpacks Future<AsyncData>', () async {
+      final state = AsyncData(0);
+
+      expect(await Future.value(state).unpacked, (0, null));
+    });
+
+    test('Unpacks Future<AsyncFailure>', () async {
+      final state = AsyncFailure(0, StackTrace.empty);
+
+      expect(await Future.value(state).unpacked, (null, state));
+    });
+  });
 }

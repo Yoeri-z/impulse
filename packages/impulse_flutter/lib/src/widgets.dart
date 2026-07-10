@@ -75,7 +75,7 @@ class AsyncSelector<T, R> extends StatelessWidget {
   const AsyncSelector({
     super.key,
     required this.ref,
-    required this.selector,
+    required this.select,
     required this.dataBuilder,
     required this.loadingBuilder,
     required this.errorBuilder,
@@ -85,7 +85,7 @@ class AsyncSelector<T, R> extends StatelessWidget {
   final ImpulseReference<T> ref;
 
   /// The async state to select
-  final AsyncState<R> Function(T) selector;
+  final AsyncState<R> Function(T) select;
 
   /// The builder that runs when the state has data [R]
   final Widget Function(BuildContext context, R data) dataBuilder;
@@ -106,7 +106,7 @@ class AsyncSelector<T, R> extends StatelessWidget {
   Widget build(BuildContext context) {
     return Selector(
       ref: ref,
-      select: selector,
+      select: select,
       builder: (context, state) {
         return switch (state) {
           AsyncLoading(:final previousValue) => loadingBuilder(

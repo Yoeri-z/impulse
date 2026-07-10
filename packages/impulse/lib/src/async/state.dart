@@ -11,6 +11,21 @@ Future<AsyncState<T>> attempt<T>(Future<T> Function() call) async {
   }
 }
 
+/// the value of an `AsyncState` unpacked into a record, usefull for linearizing the flow of async operations
+/// in bodies of code.
+typedef Unpacked<T> = (T? value, AsyncFailure<T>? err);
+
+/// extension to allow unpacking the future of a state
+extension UnpackFuture<T> on Future<AsyncState<T>> {
+  /// Converts the AsyncState in the future to an [Unpacked].
+  /// Usefull for linearizing the flow of async operations in bodies of code.
+  /// example
+  /// ```
+  /// final (value, err) = await attempt(() => foo()).unpacked;
+  /// ```
+  Future<Unpacked<T>> get unpacked => then((v) => v.unpacked);
+}
+
 /// Represents the state of an asynchronous operation.
 @immutable
 sealed class AsyncState<T> {
@@ -49,6 +64,27 @@ sealed class AsyncState<T> {
   /// Whether the asynchronous operation failed with an error.
   bool get hasError => error != null;
 
+  /// Wether this [AsyncState] is an [AsyncFailure]
+  bool get isFailure => this is AsyncFailure<T>;
+
+  /// Cast this [AsyncState] to [AsyncFailure]
+  AsyncFailure<T> get asFailure;
+
+  /// Unpacks the state into a record.
+  /// Usefull for linearizing the flow of async operations in bodies of code.
+  ///
+  /// example
+  /// ```
+  /// final (value, err) = state.unpacked;
+  ///
+  /// if(err != null){
+  ///   logErr(err);
+  /// }
+  ///
+  /// print(value);
+  /// ```
+  Unpacked<T> get unpacked => (value, isFailure ? asFailure : null);
+
   /// Maps the current state to a value of type [R] using the matching callback.
   R map<R>({
     required R Function(T data) onData,
@@ -86,6 +122,11 @@ class AsyncLoading<T> extends AsyncState<T> {
 
   @override
   StackTrace? get stackTrace => null;
+
+  @override
+  AsyncFailure<T> get asFailure => throw StateError(
+    'AsyncState is of type AsyncLoading, can not be casted to AsyncFailure',
+  );
 }
 
 /// Represents a successfully completed asynchronous operation with a value.
@@ -104,6 +145,11 @@ class AsyncData<T> extends AsyncState<T> {
 
   @override
   StackTrace? get stackTrace => null;
+
+  @override
+  AsyncFailure<T> get asFailure => throw StateError(
+    'AsyncState is of type AsyncLoading, can not be casted to AsyncFailure',
+  );
 }
 
 /// Represents a failed asynchronous operation.
@@ -126,4 +172,7 @@ class AsyncFailure<T> extends AsyncState<T> {
 
   @override
   T? get value => previousValue;
+
+  @override
+  AsyncFailure<T> get asFailure => this;
 }

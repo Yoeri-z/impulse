@@ -1,3 +1,6 @@
+## 0.8.0
+- Added `Unpacked` typedef and extensions `UnpackAsyncState` and `UnpackFuture`
+
 ## 0.7.0
 - Removed most Async utilities after async overhaul in `impulse_flutter`
 

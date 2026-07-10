@@ -74,23 +74,23 @@ Key Store API methods:
 
 References define how dependencies are created, cached, and disposed. Impulse provides three primary reference types:
 
-#### 1. `Ref<T>` (Singleton Reference)
+#### 1. `Ref<T>` (Reference)
 
-Caches a single instance of `T` globally within the store.
+Caches a single instance of `T` in the store. By default, it is dropped from the store when its reference count reaches zero.
 
 ```dart
-final authServiceRef = Ref(
-  (store) => AuthService(),
-  dispose: (service) => service.close(),
+final stopwatchRef = Ref(
+  (store) => Stopwatch(),
+  dispose: (watch) => watch.stop(),
 );
 ```
 
 #### 2 `SingletonRef<T>` (Singleton Reference)
 
-Caches a single instance of `T` in the store. By default, it is dropped from the store when its reference count reaches zero.
+Caches a single instance of `T` in the store forever (until the store is reset).
 
 ```dart
-final authServiceRef = Ref(
+final authServiceRef = SingletonRef(
   (store) => AuthService(),
   dispose: (service) => service.cleanup(), // Optional manual cleanup callback
 );
@@ -235,20 +235,31 @@ Impulse includes a functional error-handling utility to deal with operations tha
 ```dart
 import 'package:impulse/impulse.dart';
 
-Future<String> fetchData() async {
+Future<String> foo() async {
   // Can throw an error
-  return throw Exception('Network timeout');
+  return throw ExcepCaches a single instance of `T` in the store forever (until the store is reset).tion('Network timeout');
 }
 
 void main() async {
-  final result = await attempt(() => fetchData());
+  final result = await attempt(() => foo());
 
-  if (result is AsyncFailure) {
-    print('Fetch failed: ${result.error}');
+  if (result is AsyncFailure<String>) {
+    logErr(result)
     return;
   }
 
-  print('Fetched value: ${result.value}');
+  print('Fetched value: ${result.value!}');
+
+  // in functions, pattern matching is often messy.
+  // this is why this package adds an `unpacked` getter.
+
+  final (value, err) = await attempt(() => bar).unpacked;
+
+  if(err != null){
+    logErr(err)
+  }
+
+  print('Fetched value: ${value!}');
 }
 ```
 

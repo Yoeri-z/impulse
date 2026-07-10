@@ -1,3 +1,6 @@
+## 0.8.0
+- Updated dependency on `impulse` introducing breaking changes.
+
 ## 0.7.0
 - Updated dependency on `impulse` introducing breaking changes
 - Added `AsyncBuilder`, renamed `ResultSelector` to `AsyncSelector`

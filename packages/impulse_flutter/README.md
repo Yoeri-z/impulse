@@ -113,7 +113,7 @@ final authServiceRef = Ref(
 
 #### 2. `SingletonRef<T>` (Singleton Reference)
 
-Caches a single instance of `T` in the store. By default, it is dropped from the store when its reference count reaches zero.
+Caches a single instance of `T` in the store forever (until the store is reset).
 
 ```dart
 final authServiceRef = SingletonRef(
@@ -314,22 +314,26 @@ Impulse includes a functional error-handling utility to deal with operations tha
 - **`attempt`**: A utility function that wraps an asynchronous execution, returning a `Result<T>` without throwing.
 
 ```dart
-import 'package:impulse/impulse.dart';
-
-Future<String> fetchData() async {
-  // Can throw an error
-  return throw Exception('Network timeout');
-}
-
 void main() async {
-  final result = await attempt(() => fetchData());
+  final result = await attempt(() => foo());
 
-  if (result is AsyncFailure) {
-    print('Fetch failed: ${result.error}');
+  if (result is AsyncFailure<String>) {
+    logErr(result)
     return;
   }
 
-  print('Fetched value: ${result.value}');
+  print('Fetched value: ${result.value!}');
+
+  // in functions, pattern matching is often messy.
+  // this is why this package adds an `unpacked` getter.
+  
+  final (value, err) = await attempt(() => bar()).unpacked;
+
+  if(err != null){
+    logErr(err)
+  }
+
+  print('Fetched value: ${value!}');
 }
 ```
 

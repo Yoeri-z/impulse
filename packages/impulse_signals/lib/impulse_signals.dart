@@ -11,9 +11,10 @@ export 'package:impulse_flutter/impulse_flutter.dart'
         AsyncBuilder,
         AsyncFailure,
         AsyncLoading,
-        AsyncResult,
         AsyncSelector,
-        AsyncStateListenable;
+        AsyncStateListenable,
+        Unpacked,
+        UnpackFuture;
 
 export 'package:signals_flutter/signals_flutter.dart';
 export 'src/controller.dart';

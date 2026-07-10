@@ -406,7 +406,7 @@ void main() {
           store: store,
           child: AsyncSelector<AsyncStateMock, String>(
             ref: ref,
-            selector: (state) => state.state,
+            select: (state) => state.state,
             loadingBuilder: (context, previousValue) => const Text('Nothing'),
             dataBuilder: (context, value) => Text('Value: $value'),
             errorBuilder: (context, err, st, previousValue) =>
@@ -428,7 +428,7 @@ void main() {
           store: store,
           child: AsyncSelector<AsyncStateMock, String>(
             ref: ref,
-            selector: (state) => state.state,
+            select: (state) => state.state,
             loadingBuilder: (context, previousValue) => const Text('Nothing'),
             dataBuilder: (context, value) => Text('Value: $value'),
             errorBuilder: (context, err, st, previousValue) =>
@@ -450,7 +450,7 @@ void main() {
           store: store,
           child: AsyncSelector<AsyncStateMock, String>(
             ref: ref,
-            selector: (state) => state.state,
+            select: (state) => state.state,
             loadingBuilder: (context, previousValue) => const Text('Nothing'),
             dataBuilder: (context, value) => Text('Value: $value'),
             errorBuilder: (context, err, st, previousValue) =>
@@ -474,7 +474,7 @@ void main() {
           store: store,
           child: AsyncSelector<AsyncStateMock, String>(
             ref: ref,
-            selector: (state) => state.state,
+            select: (state) => state.state,
             loadingBuilder: (context, previousValue) => const Text('Nothing'),
             dataBuilder: (context, value) => Text('Value: $value'),
             errorBuilder: (context, err, st, previousValue) =>
