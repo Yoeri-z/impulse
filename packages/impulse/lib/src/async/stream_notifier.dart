@@ -1,40 +1,36 @@
 import 'dart:async';
 
 import '../impulse_notifier.dart';
+import '../interfaces.dart';
 import '../reference.dart';
 import '../store.dart';
-import 'async_utils.dart';
+import 'state.dart';
 
-/// Creates a [Ref] whose value is a [StreamTask] wrapping a subscription to
+/// Creates a [Ref] whose value is a [StreamNotifier] wrapping a subscription to
 /// a stream.
 ///
 /// Useful for handling streaming sources (websocket messages, Firestore
 /// snapshots, file watchers, etc.) through the same synchronous-creation
 /// model as other refs, while still exposing loading/value/error/done state
-/// reactively to widgets via `use`, `Selector`, or `ResultSelector`.
+/// reactively to widgets via `use`, `Selector`, or pattern matching.
 ///
 /// The subscription starts immediately when the ref is created.
 ///
 /// ```dart
-/// final messagesTaskRef = streamTaskRef((store) => api.watchMessages());
+/// final messagesFutureRef = streamRef((store) => api.watchMessages());
 ///
 /// // in a widget:
-/// ResultSelector(
-///   ref: messagesTaskRef,
-///   selector: (task) => task.result,
-///   nothingBuilder: (context) => CircularProgressIndicator(),
-///   resultBuilder: (context, messages) => Text(messages.last),
-///   errBuilder: (context, err) => Text(err.toString()),
-/// )
+/// final messagesNotifier = context.use(messagesFutureRef);
+/// final (messages, err) = messagesNotifier();
 /// ```
-Ref<StreamTask<T>> streamRef<T>(
+Ref<StreamNotifier<T>> streamRef<T>(
   Stream<T> Function(Store store) stream, {
   void Function(T value)? onData,
   void Function(Object error, StackTrace stackTrace)? onError,
   void Function()? onDone,
 }) {
   return Ref(
-    (store) => StreamTask(
+    (store) => StreamNotifier(
       () => stream(store),
       onData: onData,
       onError: onError,
@@ -46,19 +42,20 @@ Ref<StreamTask<T>> streamRef<T>(
 /// Wraps a subscription to a single [Stream] and exposes its
 /// loading/value/error/done state reactively.
 ///
-/// A [StreamTask] subscribes to [stream] immediately on construction. Use
+/// A [StreamNotifier] subscribes to [stream] immediately on construction. Use
 /// [reload] to resubscribe from a clean state (clearing the previous
 /// value/error first), or [refresh] to resubscribe while keeping the
 /// previous value/error visible until the next event arrives (useful for
 /// pull-to-refresh style UIs where you don't want the UI to flash back to a
 /// loading state).
 ///
-/// Unlike [Task], a [StreamTask] can update [value] more than once over its
+/// Unlike [FutureNotifier], a [StreamNotifier] can update [value] more than once over its
 /// lifetime as new events arrive, and tracks whether the stream has closed
 /// via [isDone].
-class StreamTask<T> extends ImpulseNotifier {
-  /// Create a [StreamTask] wrapping a [stream].
-  StreamTask(this.stream, {this.onData, this.onError, this.onDone}) {
+class StreamNotifier<T> extends ImpulseNotifier
+    implements AsyncStateListenable<T> {
+  /// Create a [StreamNotifier] wrapping a [stream].
+  StreamNotifier(this.stream, {this.onData, this.onError, this.onDone}) {
     _run();
   }
 
@@ -79,9 +76,11 @@ class StreamTask<T> extends ImpulseNotifier {
   /// Called once the stream closes, before listeners are notified.
   final void Function()? onDone;
 
-  T? _value;
-  Object? _error;
-  StackTrace? _stackTrace;
+  AsyncState<T> _state = const AsyncState.loading();
+
+  @override
+  AsyncState<T> get state => _state;
+
   bool _isLoading = true;
   bool _isDone = false;
   StreamSubscription<T>? _subscription;
@@ -89,27 +88,27 @@ class StreamTask<T> extends ImpulseNotifier {
 
   /// The most recently emitted value, or `null` if no event has arrived
   /// yet (or [reload] was used, which clears it).
-  T? get value => _value;
+  T? get value => _state.value;
 
   /// The most recent value, asserting that one exists. Throws if [hasValue]
   /// is false — only use this where you've already confirmed a value is
   /// present.
-  T get requireValue => _value!;
+  T get requireValue => _state.value!;
 
   /// Whether a value is currently available. Note this can be true even
   /// while [isLoading] is also true, if a [refresh] is in flight and kept
   /// the previous value visible.
-  bool get hasValue => _value != null;
+  bool get hasValue => _state.hasValue;
 
   /// The error from the most recent error event, or `null` if none has
   /// occurred (or a later data event superseded it).
-  Object? get error => _error;
+  Object? get error => _state.error;
 
   /// Whether the most recent event was an error.
-  bool get hasError => _error != null;
+  bool get hasError => _state.hasError;
 
   /// The stack trace associated with [error], if any.
-  StackTrace? get stackTrace => _stackTrace;
+  StackTrace? get stackTrace => _state.stackTrace;
 
   /// Whether the stream is awaiting its first event. True immediately on
   /// construction, and again during [reload]/[refresh] until they emit or
@@ -121,11 +120,6 @@ class StreamTask<T> extends ImpulseNotifier {
   /// [refresh] is called.
   bool get isDone => _isDone;
 
-  /// A snapshot of ([value], [error]) suitable for destructuring, e.g.
-  /// `final (value, err) = task.asResult;`.
-  Result<T> get asResult =>
-      (_value, hasError ? Err(_error!, _stackTrace!) : null);
-
   void _run() {
     _ident = Object();
     final callIdent = _ident;
@@ -134,18 +128,15 @@ class StreamTask<T> extends ImpulseNotifier {
     _subscription = stream().listen(
       (event) {
         if (disposed || callIdent != _ident) return;
-        _value = event;
-        _error = null;
-        _stackTrace = null;
         _isLoading = false;
+        _state = AsyncState.data(event);
         onData?.call(event);
         notify();
       },
       onError: (Object e, StackTrace st) {
         if (disposed || callIdent != _ident) return;
-        _error = e;
-        _stackTrace = st;
         _isLoading = false;
+        _state = AsyncState.error(e, st, previousValue: _state.value);
         onError?.call(e, st);
         notify();
       },
@@ -167,6 +158,7 @@ class StreamTask<T> extends ImpulseNotifier {
   /// loading state — e.g. reconnecting a socket that already has data.
   void refresh() async {
     _isLoading = true;
+    _state = AsyncState.loading(previousValue: _state.value);
     notify();
     _subscription?.cancel();
     _run();
@@ -178,10 +170,8 @@ class StreamTask<T> extends ImpulseNotifier {
   /// Prefer this when stale data shouldn't be shown at all while reloading
   /// — e.g. after changing a filter that makes the previous events invalid.
   void reload() async {
-    _value = null;
-    _error = null;
-    _stackTrace = null;
     _isLoading = true;
+    _state = const AsyncState.loading();
     notify();
     _subscription?.cancel();
     _run();

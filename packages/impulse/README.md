@@ -118,32 +118,42 @@ final profileA = store.get(userProfileRef('Alice'));
 final profileB = store.get(userProfileRef('Bob'));
 ```
 
-#### 5. `taskRef<T>` (Handling futures)
+#### 5. `futureRef<T>` (Handling futures)
 
-`taskRef` is a function that returns a `Ref` with a `Task<T>` object. A `Task<T>` is a special notifier that wrapps an async call with a neat interface.
+`futureRef` is a function that returns a `Ref` with a `FutureNotifier<T>` object. A `FutureNotifier<T>` is a special notifier that wraps an async call with a neat interface and exposes its state as an `AsyncValue<T>`.
 ```dart
-final taskRef = taskRef((store) async => await getUser(store.get(userId)));
+final userFutureRef = futureRef((store) async => await getUser(store.get(userId)));
 
-final task = store.get(taskRef)
+final notifier = store.get(userFutureRef);
 
-// task exposes various flags that should be familiar.
-task.isLoading;
-task.hasValue;
-task.hasError;
-task.value;
-task.error;
-task.stackTrace;
+// You can call the notifier directly to destructure the current state:
+final (user, err) = notifier();
+
+// Or pattern-match on the state:
+switch (notifier.state) {
+  AsyncLoading() => print('Loading...'),
+  AsyncData(:final value) => print('User: ${value.name}'),
+  AsyncError(:final error) => print('Error: $error'),
+}
+
+// The notifier also exposes various convenience properties:
+notifier.isLoading;
+notifier.hasValue;
+notifier.hasError;
+notifier.value;
+notifier.error;
+notifier.stackTrace;
 
 // to refresh without discarding the old value or error
-task.refresh();
+notifier.refresh();
 
 // to reload, discarding old value or error
-task.reload();
+notifier.reload();
 ```
 You may only use the store to get other references before introducing an async gap.
 ```dart
 // this is not allowed
-taskRef((store) async{  
+futureRef((store) async{  
   await doFoo();
   
   return await getUser(store.get(idRef));
@@ -151,7 +161,7 @@ taskRef((store) async{
 
 
 // this is allowed
-taskRef((store) async{  
+futureRef((store) async{  
   final userId = store.get(idRef);
 
   await doFoo();
@@ -162,27 +172,37 @@ taskRef((store) async{
 
 #### 6. `streamRef<T>` (Handling streams)
 
-`streamRef` is a function that returns a `Ref` with a `StreamTask<T>` object. A `StreamTask<T>` wraps a subscription to a stream and exposes its state reactively.
+`streamRef` is a function that returns a `Ref` with a `StreamNotifier<T>` object. A `StreamNotifier<T>` wraps a subscription to a stream and exposes its state reactively.
 
 ```dart
 final chatMessagesRef = streamRef((store) => api.watchMessages(store.get(roomIdRef)));
 
-final task = store.get(chatMessagesRef);
+final notifier = store.get(chatMessagesRef);
 
-// task exposes various flags that should be familiar.
-task.isLoading;
-task.hasValue;
-task.hasError;
-task.isDone;      // True if the underlying stream has closed
-task.value;
-task.error;
-task.stackTrace;
+// You can call the notifier directly to destructure the current state:
+final (messages, err) = notifier();
+
+// Or pattern-match on the state:
+switch (notifier.state) {
+  AsyncLoading() => print('Loading...'),
+  AsyncData(:final value) => print('Messages: $value'),
+  AsyncError(:final error) => print('Error: $error'),
+}
+
+// The notifier also exposes various convenience properties:
+notifier.isLoading;
+notifier.hasValue;
+notifier.hasError;
+notifier.isDone;      // True if the underlying stream has closed
+notifier.value;
+notifier.error;
+notifier.stackTrace;
 
 // to refresh (re-subscribe) without discarding the old value or error
-task.refresh();
+notifier.refresh();
 
 // to reload (re-subscribe), immediately discarding old value or error
-task.reload();
+notifier.reload();
 ```
 ---
 
@@ -205,13 +225,12 @@ class ThemeState extends ImpulseNotifier {
 
 ---
 
-### Error Handling with `Result<T>` and `attempt`
+### Error Handling with `AsyncState<T>` and `attempt`
 
 Impulse includes a functional error-handling utility to deal with operations that might fail (e.g., network requests, file I/O).
 
-- **`Result<T>`**: A type alias representing the record `(T? value, Err? err)`.
+- **`AsyncState<T>`**: A sealed class with subclasses `AsyncData`, `AsyncError` and `AsyncLoading` for pattern matching.
 - **`attempt`**: A utility function that wraps an asynchronous execution, returning a `Result<T>` without throwing.
-- **`MapResult` Extension**: Exposes a `.map()` method to gracefully handle the success, failure, or empty state of a `Result`.
 
 ```dart
 import 'package:impulse/impulse.dart';
@@ -222,14 +241,14 @@ Future<String> fetchData() async {
 }
 
 void main() async {
-  final (value, err) = await attempt(() => fetchData());
+  final result = await attempt(() => fetchData());
 
-  if (err != null) {
-    print('Fetch failed: ${err.error}');
+  if (result is AsyncFailure) {
+    print('Fetch failed: ${result.error}');
     return;
   }
 
-  print('Fetched value: $value');
+  print('Fetched value: ${result.value}');
 }
 ```
 

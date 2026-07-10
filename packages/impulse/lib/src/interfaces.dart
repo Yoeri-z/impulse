@@ -1,5 +1,5 @@
 import 'store.dart';
-import 'async/async_utils.dart';
+import 'async/state.dart';
 
 /// A callback function that notifies when a state change occurs.
 typedef Listener = void Function();
@@ -29,8 +29,8 @@ abstract interface class ReactivityAdapter {
   void onDispose(Store store, dynamic value);
 }
 
-/// An interface for objects that contain a [Result].
-abstract interface class ResultContainer<T> implements ImpulseListenable {
-  /// The [Result] contained by this object.
-  Result<T> get result;
+/// An interface for objects that expose an [AsyncState] and notify on changes.
+abstract interface class AsyncStateListenable<T> implements ImpulseListenable {
+  /// The current state of the asynchronous operation.
+  AsyncState<T> get state;
 }

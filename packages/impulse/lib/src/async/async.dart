@@ -1,2 +1,2 @@
-export 'task.dart';
-export 'stream_task.dart';
+export 'future_notifier.dart';
+export 'stream_notifier.dart';

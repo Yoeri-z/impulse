@@ -3,20 +3,20 @@ import 'package:impulse/impulse.dart';
 import 'package:test/test.dart';
 
 void main() {
-  Task<int> createSuccessTask(int result) {
-    return Task(() async => result);
+  FutureNotifier<int> createSuccessTask(int result) {
+    return FutureNotifier(() async => result);
   }
 
-  Task<int> createDelayedTask(int result, Completer<void> gate) {
-    return Task(() async {
+  FutureNotifier<int> createDelayedTask(int result, Completer<void> gate) {
+    return FutureNotifier(() async {
       await gate.future;
       return result;
     });
   }
 
-  Task<int> createErrorTask([Exception? err]) {
+  FutureNotifier<int> createErrorTask([Exception? err]) {
     final errorToThrow = err ?? Exception('Default error');
-    return Task(() async => throw errorToThrow);
+    return FutureNotifier(() async => throw errorToThrow);
   }
 
   group('Initialization and Success State', () {
@@ -47,19 +47,13 @@ void main() {
     test('calls onSuccess callback with result', () async {
       int? capturedValue;
 
-      final _ = Task(() async => 99, onSuccess: (val) => capturedValue = val);
+      final _ = FutureNotifier(
+        () async => 99,
+        onSuccess: (val) => capturedValue = val,
+      );
 
       await Future.delayed(Duration.zero);
       expect(capturedValue, 99);
-    });
-
-    test('result getter returns valid tuple on success', () async {
-      final task = createSuccessTask(0);
-      await Future.delayed(Duration.zero);
-
-      final (val, err) = task.result;
-      expect(val, 0);
-      expect(err, isNull);
     });
   });
 
@@ -85,7 +79,7 @@ void main() {
     test('calls onError callback with exception', () async {
       Object? capturedError;
 
-      final _ = Task(
+      final _ = FutureNotifier(
         () async => throw Exception('Crash'),
         onError: (err, st) => capturedError = err,
       );
@@ -93,21 +87,12 @@ void main() {
       await Future.delayed(Duration.zero);
       expect(capturedError, isA<Exception>());
     });
-
-    test('result getter returns Err tuple on failure', () async {
-      final task = createErrorTask();
-      await Future.delayed(Duration.zero);
-
-      final (val, err) = task.result;
-      expect(val, isNull);
-      expect(err, isNotNull);
-    });
   });
 
   group('refresh()', () {
     test('sets loading to true but keeps previous value', () async {
       int counter = 1;
-      final task = Task(() async => counter++);
+      final task = FutureNotifier(() async => counter++);
       await Future.delayed(Duration.zero);
 
       task.refresh();
@@ -118,7 +103,7 @@ void main() {
 
     test('resolves to new value after completion', () async {
       int counter = 1;
-      final task = Task(() async => counter++);
+      final task = FutureNotifier(() async => counter++);
       await Future.delayed(Duration.zero);
 
       await task.refresh();
@@ -142,7 +127,7 @@ void main() {
 
     test('resolves to new value after completion', () async {
       int counter = 1;
-      final task = Task(() async => counter++);
+      final task = FutureNotifier(() async => counter++);
       await Future.delayed(Duration.zero);
 
       await task.reload();
@@ -167,7 +152,7 @@ void main() {
     test('does not fire callbacks if disposed before completion', () async {
       bool callbackFired = false;
       final gate = Completer<void>();
-      final task = Task(() async {
+      final task = FutureNotifier(() async {
         await gate.future;
         return 0;
       }, onSuccess: (_) => callbackFired = true);
@@ -200,7 +185,7 @@ void main() {
         final completer2 = Completer<int>();
         int callCount = 0;
 
-        final task = Task(() {
+        final task = FutureNotifier(() {
           callCount++;
           if (callCount == 1) return completer1.future;
           return completer2.future;
@@ -230,7 +215,7 @@ void main() {
       int callCount = 0;
       int successCallbackCount = 0;
 
-      final task = Task(() {
+      final task = FutureNotifier(() {
         callCount++;
         return callCount == 1 ? completer1.future : completer2.future;
       }, onSuccess: (_) => successCallbackCount++);
@@ -260,12 +245,12 @@ void main() {
 
   group('taskRef', () {
     test('creates a Ref correctly wrapping the async call', () {
-      final myRef = taskRef((store) async => 'data');
+      final myRef = futureRef((store) async => 'data');
 
       final store = Store();
       final taskInstance = store.get(myRef);
 
-      expect(taskInstance, isA<Task<String>>());
+      expect(taskInstance, isA<FutureNotifier<String>>());
     });
   });
 }

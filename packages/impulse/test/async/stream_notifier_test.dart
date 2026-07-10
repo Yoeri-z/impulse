@@ -3,17 +3,19 @@ import 'package:impulse/impulse.dart';
 import 'package:test/test.dart';
 
 void main() {
-  StreamTask<int> createSuccessTask(int result) {
-    return StreamTask(() => Stream.value(result));
+  StreamNotifier<int> createSuccessTask(int result) {
+    return StreamNotifier(() => Stream.value(result));
   }
 
-  StreamTask<int> createDelayedTask(int result, Completer<void> gate) {
-    return StreamTask(() => Stream.fromFuture(gate.future.then((_) => result)));
+  StreamNotifier<int> createDelayedTask(int result, Completer<void> gate) {
+    return StreamNotifier(
+      () => Stream.fromFuture(gate.future.then((_) => result)),
+    );
   }
 
-  StreamTask<int> createErrorTask([Exception? err]) {
+  StreamNotifier<int> createErrorTask([Exception? err]) {
     final errorToThrow = err ?? Exception('Default error');
-    return StreamTask(() => Stream<int>.error(errorToThrow));
+    return StreamNotifier(() => Stream<int>.error(errorToThrow));
   }
 
   group('Initialization and Data State', () {
@@ -44,7 +46,7 @@ void main() {
     test('calls onData callback with each event', () async {
       int? capturedValue;
 
-      final _ = StreamTask(
+      final _ = StreamNotifier(
         () => Stream.value(99),
         onData: (val) => capturedValue = val,
       );
@@ -53,18 +55,9 @@ void main() {
       expect(capturedValue, 99);
     });
 
-    test('result getter returns valid tuple on success', () async {
-      final task = createSuccessTask(0);
-      await Future.delayed(Duration.zero);
-
-      final (val, err) = task.asResult;
-      expect(val, 0);
-      expect(err, isNull);
-    });
-
     test('updates value again on a second emitted event', () async {
       final controller = StreamController<int>();
-      final task = StreamTask(() => controller.stream);
+      final task = StreamNotifier(() => controller.stream);
 
       controller.add(1);
       await Future.delayed(Duration.zero);
@@ -79,7 +72,7 @@ void main() {
 
     test('marks isDone once the stream closes', () async {
       final controller = StreamController<int>();
-      final task = StreamTask(() => controller.stream);
+      final task = StreamNotifier(() => controller.stream);
 
       expect(task.isDone, isFalse);
 
@@ -112,7 +105,7 @@ void main() {
     test('calls onError callback with exception', () async {
       Object? capturedError;
 
-      final _ = StreamTask(
+      final _ = StreamNotifier(
         () => Stream<int>.error(Exception('Crash')),
         onError: (err, st) => capturedError = err,
       );
@@ -121,18 +114,9 @@ void main() {
       expect(capturedError, isA<Exception>());
     });
 
-    test('result getter returns Err tuple on failure', () async {
-      final task = createErrorTask();
-      await Future.delayed(Duration.zero);
-
-      final (val, err) = task.asResult;
-      expect(val, isNull);
-      expect(err, isNotNull);
-    });
-
     test('a later data event clears a previous error', () async {
       final controller = StreamController<int>();
-      final task = StreamTask(() => controller.stream);
+      final task = StreamNotifier(() => controller.stream);
 
       controller.addError(Exception('oops'));
       await Future.delayed(Duration.zero);
@@ -150,7 +134,7 @@ void main() {
   group('refresh()', () {
     test('sets loading to true but keeps previous value', () async {
       int counter = 1;
-      final task = StreamTask(() => Stream.value(counter++));
+      final task = StreamNotifier(() => Stream.value(counter++));
 
       await Future.delayed(Duration.zero);
       task.refresh();
@@ -161,7 +145,7 @@ void main() {
 
     test('resolves to new value after completion', () async {
       int counter = 1;
-      final task = StreamTask(() => Stream.value(counter++));
+      final task = StreamNotifier(() => Stream.value(counter++));
 
       await Future.delayed(Duration.zero);
       task.refresh();
@@ -178,7 +162,7 @@ void main() {
         final controllers = [controller1, StreamController<int>()];
         int callCount = 0;
 
-        final task = StreamTask(() => controllers[callCount++].stream);
+        final task = StreamNotifier(() => controllers[callCount++].stream);
         await Future.delayed(Duration.zero);
 
         task.refresh();
@@ -210,7 +194,7 @@ void main() {
 
     test('resolves to new value after completion', () async {
       int counter = 1;
-      final task = StreamTask(() => Stream.value(counter++));
+      final task = StreamNotifier(() => Stream.value(counter++));
 
       await Future.delayed(Duration.zero);
       task.reload();
@@ -221,7 +205,7 @@ void main() {
 
     test('resets isDone so a closed stream can be re-observed', () async {
       var controller = StreamController<int>();
-      final task = StreamTask(() => controller.stream);
+      final task = StreamNotifier(() => controller.stream);
 
       await controller.close();
       await Future.delayed(.zero);
@@ -256,7 +240,7 @@ void main() {
     test('does not fire callbacks if disposed before completion', () async {
       bool callbackFired = false;
       final gate = Completer<void>();
-      final task = StreamTask(
+      final task = StreamNotifier(
         () => Stream.fromFuture(gate.future.then((_) => 0)),
         onData: (_) => callbackFired = true,
       );
@@ -271,7 +255,7 @@ void main() {
 
     test('cancels the underlying subscription', () async {
       final controller = StreamController<int>();
-      final task = StreamTask(() => controller.stream);
+      final task = StreamNotifier(() => controller.stream);
 
       task.dispose();
       await Future.delayed(Duration.zero);
@@ -295,7 +279,7 @@ void main() {
 
     test('calls notify again for each subsequent event', () async {
       final controller = StreamController<int>();
-      final task = StreamTask(() => controller.stream);
+      final task = StreamNotifier(() => controller.stream);
 
       int notifyCount = 0;
       task.addListener(() => notifyCount++);
@@ -319,7 +303,7 @@ void main() {
         final completer2 = Completer<int>();
         int callCount = 0;
 
-        final task = StreamTask(() {
+        final task = StreamNotifier(() {
           callCount++;
           final completer = callCount == 1 ? completer1 : completer2;
           return Stream.fromFuture(completer.future);
@@ -349,7 +333,7 @@ void main() {
       int callCount = 0;
       int dataCallbackCount = 0;
 
-      final task = StreamTask(() {
+      final task = StreamNotifier(() {
         callCount++;
         final completer = callCount == 1 ? completer1 : completer2;
         return Stream.fromFuture(completer.future);
@@ -385,7 +369,7 @@ void main() {
       final store = Store();
       final taskInstance = store.get(myRef);
 
-      expect(taskInstance, isA<StreamTask<String>>());
+      expect(taskInstance, isA<StreamNotifier<String>>());
     });
   });
 }

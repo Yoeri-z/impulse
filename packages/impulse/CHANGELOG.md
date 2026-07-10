@@ -1,5 +1,7 @@
-## 0.6.4
+## 0.7.0
 - Changed `ImpulseNotifier` implementation to higher performance variant (based on flutters implementation)
+- Renamed: `Task` to `FutureNotifier`, `StreamTask` to `StreamNotifier`, `ResultContainer` to `ResultListenable` and 
+- Removed the record based error handling pattern in favour of `AsyncState` sealed class pattern matching
 
 ## 0.6.3
 - Made interface for `Task` and `StreamTask`.
