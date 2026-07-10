@@ -18,14 +18,3 @@ void main() async {
 
   $store.reset();
 }
-
-void main() async {
-  final result = await attempt(() => fetchData());
-
-  if (result is AsyncFailure) {
-    print('Fetch failed: ${result.error}');
-    return;
-  }
-
-  print('Fetched value: ${result.value}');
-}

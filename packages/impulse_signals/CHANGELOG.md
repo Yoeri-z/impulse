@@ -1,3 +1,6 @@
+## 0.7.0
+- Removed most Async utilities after async overhaul in `impulse_flutter`
+
 ## 0.6.2
 - updated dependency constraints
 - Added some getters to the `ResultExtension`

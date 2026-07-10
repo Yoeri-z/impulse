@@ -2,7 +2,18 @@
 library;
 
 export 'package:impulse_flutter/impulse_flutter.dart'
-    hide Result, ResultExtension, attempt, $store, createStore;
+    hide
+        attempt,
+        $store,
+        createStore,
+        AsyncState,
+        AsyncData,
+        AsyncBuilder,
+        AsyncFailure,
+        AsyncLoading,
+        AsyncResult,
+        AsyncSelector,
+        AsyncStateListenable;
 
 export 'package:signals_flutter/signals_flutter.dart';
 export 'src/controller.dart';

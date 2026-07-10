@@ -88,24 +88,6 @@ class CounterPage extends SignalWidget {
 
 ```
 
-## Modified error handling
-
-The package changes `impulse`'s method to work with errors to use `signal`'s `AsyncError` class for the `Result<T>` type.
-
-```dart
-final (value, err) = attempt(() => myApiCall(...));
-
-// err is `AsyncError` from signals
-// contains the error and the stacktrace
-if(err != null){
-  print('Error oh no! ${err.error}')
-  print(err.stackTrace);
-}
-
-// value is value on succes
-print('Retrieved value $value');
-```
-
 ## Modified reactivity
 
 The package modifies how the store reacts to `ChangeNotifier`. If a value is a signal reactivity is disabled. This means it is safe to provide signals using `Ref`. It also automatically disposes signals whenever the `Ref` gets disposed. Behavior regarding `ChangeNotifiers` is otherwise unchanged and will behave exactly the same as it does in `signals_flutter`.
