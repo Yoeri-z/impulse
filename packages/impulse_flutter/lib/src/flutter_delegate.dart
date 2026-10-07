@@ -1,9 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:impulse/impulse.dart' hide $store;
 
-/// The global default [Store] instance configured for Flutter.
-final $store = createStore();
-
 /// Creates a [Store] configured for flutter.
 Store createStore() => Store(delegate: FlutterReactivityDelegate());
 
@@ -28,7 +25,7 @@ class FlutterAdapter implements ReactivityAdapter {
   }
 
   @override
-  void onDispose(Store store, value) {
+  void onDispose(dynamic value) {
     if (value is ChangeNotifier) {
       value.dispose();
     }
