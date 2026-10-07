@@ -95,7 +95,7 @@ class StoreScope extends StatefulWidget {
 }
 
 class _StoreScopeState extends State<StoreScope> {
-  late var _store = widget.store ?? $store;
+  late var _store = widget.store ?? createStore();
 
   @override
   void reassemble() {
@@ -124,7 +124,7 @@ class _StoreScopeState extends State<StoreScope> {
     _store.reset();
 
     if (widget.store == null) {
-      _store = $store;
+      _store = createStore();
     } else {
       _store = widget.store!;
     }
@@ -178,6 +178,14 @@ class _InheritedStoreElement extends InheritedElement {
     if (hooks.any((hook) => hook.key == key)) return;
 
     hooks.add((key: key, dispose: dispose));
+  }
+
+  @override
+  void updated(_InheritedStore oldWidget) {
+    if ((widget as _InheritedStore).updateShouldNotify(oldWidget)) {
+      _disposeHooks.clear();
+      super.updated(oldWidget);
+    }
   }
 
   @override

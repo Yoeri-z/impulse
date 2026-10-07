@@ -116,6 +116,36 @@ void main() {
       verifyDisposed(1);
     });
 
+    testWidgets('object is disposed within the new store on unmount', (
+      tester,
+    ) async {
+      final store1 = createStore();
+      final store2 = createStore();
+
+      final storeNotifier = ValueNotifier<Store>(store1);
+
+      await tester.pumpWidget(
+        ValueListenableBuilder<Store>(
+          valueListenable: storeNotifier,
+          builder: (context, store, _) => TestApp(
+            store: store,
+            child: RefTextBuilder(ref: testRef),
+          ),
+        ),
+      );
+
+      storeNotifier.value = store2;
+      await tester.pumpAndSettle();
+
+      await tester.pumpWidget(const SizedBox());
+
+      // This might seem arbritrary so placing a short explanation.
+      // The same `mock` is returned from the ref even in a new store.
+      // This means on proper behavior (disposed in both stores) .onDispose is called twice.
+      // The fact a store swap disposes a ref exactly once is already verified by another test.
+      verify(() => mock.onDispose()).called(2);
+    });
+
     testWidgets('ref.read throws if widget is NOT bound to lifecycle', (
       tester,
     ) async {
