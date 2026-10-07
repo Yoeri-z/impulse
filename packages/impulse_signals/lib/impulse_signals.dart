@@ -4,7 +4,6 @@ library;
 export 'package:impulse_flutter/impulse_flutter.dart'
     hide
         attempt,
-        $store,
         createStore,
         AsyncState,
         AsyncData,

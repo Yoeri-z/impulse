@@ -1,3 +1,7 @@
+## 0.9.0
+- Updated dependency constraints on `impulse_flutter` introducting major breaking changes.
+- Removed the global `$store` because it is considered an anti pattern within flutter, and i found i never actually used it. 
+
 ## 0.8.0
 - Added `Unpacked` typedef and extensions `UnpackAsyncState` and `UnpackFuture`
 

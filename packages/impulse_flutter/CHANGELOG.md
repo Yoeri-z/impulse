@@ -1,5 +1,7 @@
-## 0.8.0
+## 0.9.0
 - Updated dependency on `impulse` introducing breaking changes.
+- Removed the global `$store` because it is considered an anti pattern within flutter, and i found i never actually used it. 
+- Fixed a critical bug where new objects instantiated after a `Store` swap in `StoreScope` would not be tracked for disposal.
 
 ## 0.7.0
 - Updated dependency on `impulse` introducing breaking changes

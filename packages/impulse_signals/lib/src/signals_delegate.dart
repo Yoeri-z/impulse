@@ -3,9 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:impulse_flutter/impulse_flutter.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
-/// The global default [Store] instance configured for Signals.
-final $store = createStore();
-
 /// Creates a [Store] configured for `signals_flutter`.
 Store createStore() => Store(delegate: SignalsReactivityDelegate());
 
@@ -36,7 +33,7 @@ class SignalsAdapter implements ReactivityAdapter {
   }
 
   @override
-  void onDispose(Store store, value) {
+  void onDispose(dynamic value) {
     if (value is ReadonlySignal) {
       value.dispose();
     } else if (value is ChangeNotifier) {
