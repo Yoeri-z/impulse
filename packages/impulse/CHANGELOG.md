@@ -1,5 +1,6 @@
-## 0.8.0
+## 0.9.0
 - Removed `AsyncResult`
+- removed `store` parameter from onDispose method in the `ReactivityAdapter` interface
 
 ## 0.7.0
 - Changed `ImpulseNotifier` implementation to higher performance variant (based on flutters implementation)

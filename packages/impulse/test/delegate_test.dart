@@ -60,13 +60,12 @@ void main() {
 
     test('should trigger custom adapter onDispose', () {
       final object = MockObject();
-      final store = Store();
-      when(() => adapter.onDispose(any(), any())).thenAnswer((_) {});
+      when(() => adapter.onDispose(any())).thenAnswer((_) {});
 
       delegate.addAdapter(adapter);
-      delegate.onDispose(store, object);
+      delegate.onDispose(object);
 
-      verify(() => adapter.onDispose(store, object)).called(1);
+      verify(() => adapter.onDispose(object)).called(1);
     });
 
     test('should merge multiple unbinders', () {
@@ -108,9 +107,8 @@ void main() {
 
     test('should handle Disposable by default', () {
       final disposable = MockDisposable();
-      final store = Store();
 
-      delegate.onDispose(store, disposable);
+      delegate.onDispose(disposable);
 
       verify(() => disposable.dispose()).called(1);
     });

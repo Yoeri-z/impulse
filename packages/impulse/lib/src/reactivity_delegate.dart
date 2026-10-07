@@ -1,5 +1,4 @@
 import 'interfaces.dart';
-import 'store.dart';
 
 /// A delegate that manages a collection of [ReactivityAdapter]s to handle binding and disposal of various object types.
 class ReactivityDelegate {
@@ -46,9 +45,9 @@ class ReactivityDelegate {
   }
 
   /// Iterates through all adapters to dispose of a [value].
-  void onDispose(Store store, dynamic value) {
+  void onDispose(dynamic value) {
     for (final adapter in _adapters) {
-      adapter.onDispose(store, value);
+      adapter.onDispose(value);
     }
   }
 }
@@ -67,7 +66,7 @@ class _ListenableAdapter implements ReactivityAdapter {
   }
 
   @override
-  void onDispose(Store store, dynamic value) {}
+  void onDispose(dynamic value) {}
 }
 
 class _DisposableAdapter implements ReactivityAdapter {
@@ -77,7 +76,7 @@ class _DisposableAdapter implements ReactivityAdapter {
   void Function()? onBind(dynamic value, void Function() notify) => null;
 
   @override
-  void onDispose(Store store, dynamic value) {
+  void onDispose(dynamic value) {
     if (value is Disposable) {
       value.dispose();
     }

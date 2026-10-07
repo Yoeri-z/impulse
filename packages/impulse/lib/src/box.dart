@@ -160,7 +160,7 @@ class ImpulseBox<T> extends ImpulseNotifier {
     _cancelSubscription = null;
 
     if (_value != null) {
-      delegate.onDispose(store, _value!);
+      delegate.onDispose(_value!);
       ref.dispose?.call(_value!);
       _value = null;
     }

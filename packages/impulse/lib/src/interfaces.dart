@@ -1,4 +1,3 @@
-import 'store.dart';
 import 'async/state.dart';
 
 /// A callback function that notifies when a state change occurs.
@@ -26,7 +25,7 @@ abstract interface class ReactivityAdapter {
   void Function()? onBind(dynamic value, void Function() notify);
 
   /// Called when a value is removed from the store to handle cleanup.
-  void onDispose(Store store, dynamic value);
+  void onDispose(dynamic value);
 }
 
 /// An interface for objects that expose an [AsyncState] and notify on changes.

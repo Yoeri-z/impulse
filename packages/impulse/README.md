@@ -367,7 +367,7 @@ class BlocReactivityAdapter implements ReactivityAdapter {
   }
 
   @override
-  void onDispose(Store store, dynamic value) {
+  void onDispose(dynamic value) {
     if (value is BlocBase) {
       // Automatically close the Bloc when it is dropped from the store
       value.close();

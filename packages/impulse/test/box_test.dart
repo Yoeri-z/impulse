@@ -57,7 +57,7 @@ void main() {
     subscription = MockSubscription();
 
     when(() => delegate.onBind(any(), any())).thenReturn(subscription.call);
-    when(() => delegate.onDispose(any(), any())).thenAnswer((_) {});
+    when(() => delegate.onDispose(any())).thenAnswer((_) {});
   });
 
   ImpulseBox<int> createBox({
@@ -83,7 +83,7 @@ void main() {
       verify(() => delegate.onBind(value, any())).called(1);
   void verifyNeverOnBind() => verifyNever(() => delegate.onBind(any(), any()));
   void verifyOnDispose(int value) =>
-      verify(() => delegate.onDispose(any(), value)).called(1);
+      verify(() => delegate.onDispose(value)).called(1);
   void verifyRefDispose(int value) => verify(() => dispose(value)).called(1);
   void verifySubscriptionCancelled() => verify(() => subscription()).called(1);
   void verifyDrop() => verify(() => store.drop(ref)).called(1);
