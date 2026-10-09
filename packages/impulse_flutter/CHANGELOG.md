@@ -1,3 +1,6 @@
+## 0.9.1
+- Added the `Disposables` mixin for managing disposal of widget-local state objects. `managed` follows the same `create`/`reassemble`/`dispose` contract as references and disposes through the store's reactivity system.
+
 ## 0.9.0
 - Updated dependency on `impulse` introducing breaking changes.
 - Removed the global `$store` because it is considered an anti pattern within flutter, and i found i never actually used it. 

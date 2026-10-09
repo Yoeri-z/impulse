@@ -229,6 +229,43 @@ notifier.refresh();
 // to reload (re-subscribe), immediately discarding old value or error
 notifier.reload();
 ```
+
+#### Using `FutureNotifier` and `StreamNotifier`
+
+`FutureNotifier` and `StreamNotifier` can also be used without refs and stores, e.g. owned by a `StatefulWidget`. This is often usefull because most async calls do not actually need to be shared through the `StoreScope`. Note that the constructor starts the future/subscription immediately, so create the notifier lazily (e.g. in `initState`) and `dispose()` it when done.
+
+```dart
+class _ChatPageState extends State<ChatPage> {
+  late final StreamNotifier<List<Message>> messagesNotifier;
+
+  @override
+  void initState() {
+    super.initState();
+    messagesNotifier = StreamNotifier(
+      () => api.watchMessages(widget.roomId),
+      onError: (e, st) => logErr(e), // also: onData / onDone
+    );
+  }
+
+  @override
+  void dispose() {
+    messagesNotifier.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AsyncBuilder(
+      notifier: messagesNotifier,
+      loadingBuilder: (context, _) => const CircularProgressIndicator(),
+      dataBuilder: (context, messages) => MessageList(messages),
+      errorBuilder: (context, err, st, _) => Text(err.toString()),
+    );
+  }
+}
+```
+
+`FutureNotifier(() => fetchUser(widget.roomId), onSuccess: ..., onError: ...)` works the same way.
 ---
 
 ## Reading State in Widgets
@@ -353,6 +390,37 @@ final appThemeRef = Ref(
 ```
 
 If you don't want this behavior consider using a `SingletonRef` or a `FactoryRef`
+
+---
+
+## Widget-local Disposables
+
+Not everything belongs in the store. Some objects only make sense within a single widget (a `TextEditingController`, a `FutureNotifier` sourced from widget state). The `Disposables` mixin manages disposal of such objects for a `State`.
+
+It follows the same `create`/`reassemble`/`dispose` contract as references: the object is created on first access, recreated or updated on hot reload, and disposed when the state is disposed. Disposal goes through the store's reactivity system, so any type the configured `ReactivityAdapter`s handle (such as `ChangeNotifier` or `Disposable`) is disposed automatically.
+
+```dart
+class _ChatPageState extends State<ChatPage> with Disposables {
+  late final textController = managed((store) => TextEditingController());
+
+  late final messagesNotifier = managed(
+    () => StreamNotifier((store) => api.watchMessages(widget.roomId)),
+    reassemble: (n) => n.reload(),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return AsyncBuilder(
+      notifier: messagesNotifier,
+      loadingBuilder: (context, _) => const CircularProgressIndicator(),
+      dataBuilder: (context, messages) => MessageList(messages),
+      errorBuilder: (context, err, st, _) => Text(err.toString()),
+    );
+  }
+}
+```
+
+Use refs for objects that participate in dependency injection across the widget tree, and `Disposables` for objects scoped to a single `State`.
 
 ---
 
