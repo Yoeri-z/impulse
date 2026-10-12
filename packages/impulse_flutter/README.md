@@ -91,8 +91,8 @@ Impulse revolves around three primary concepts: the Store, StoreScope, and Refer
 
 ### 1. The Store & StoreScope
 
-- **The Store**: A central container where all active states and dependencies are cached and managed. Impulse exposes a default global store named `$store`.
-- **StoreScope**: A Flutter widget that provides a `Store` to the widget tree. By default, it provides the global default `$store` instance to the descendants. This is important because it means you can access and share the same global state from anywhere in your project (including from service classes or direct references outside the widget tree), while still allowing the widget tree to reactively listen to updates. It also tracks widget lifecycles to automatically release references when widgets unmount.
+- **The Store**: A central container where all active states and dependencies are cached and managed.
+- **StoreScope**: A Flutter widget that provides a `Store` to the widget tree. By default, it creates its own `Store` instance and passes it to the descendants.You can also pass in your own instance. It tracks widget lifecycles to automatically release references when widgets unmount.
 
 ---
 
@@ -266,6 +266,7 @@ class _ChatPageState extends State<ChatPage> {
 ```
 
 `FutureNotifier(() => fetchUser(widget.roomId), onSuccess: ..., onError: ...)` works the same way.
+
 ---
 
 ## Reading State in Widgets
@@ -426,7 +427,7 @@ Use refs for objects that participate in dependency injection across the widget 
 
 ## Testing & Overrides
 
-You can mock dependencies in unit and widget tests by providing reference overrides inside isolated store instances or on the global `$store` instance.
+You can mock dependencies in unit and widget tests by providing reference overrides inside isolated store instances.
 
 ### Widget Testing Example
 
@@ -475,15 +476,13 @@ void main() {
 }
 ```
 
-> **Note**: it is possible to run your tests using the global `$store` instance (by overriding references on `$store` and calling `$store.reset()` in your test suite's `setUp` or `tearDown` blocks to clean up state), it is highly preferred to create and use isolated local `Store` instances instead. Isolated stores guarantee that tests do not share state, making them robust and safe to run concurrently. Only use `$store` if you absolutely have to.
-
 ---
 
 ## Advanced Usage
 
 ### Custom Reactivity Adapters
 
-By default, the default `$store` supports Flutter's standard `Listenable`, `ValueNotifier`, and `ChangeNotifier` classes.
+By default, the default the store made through `createStore()` supports Flutter's standard `Listenable`, `ValueNotifier`, and `ChangeNotifier` classes.
 
 You can add custom `ReactivityAdapter`s to integrate third-party state managers or streams. Below is an example of an adapter for Cubit/BLoC:
 
@@ -505,7 +504,7 @@ class CubitReactivityAdapter implements ReactivityAdapter {
   }
 
   @override
-  void onDispose(Store store, dynamic value) {
+  void onDispose(dynamic value) {
     if (value is BlocBase) {
       // Close the Cubit/Bloc when dropped from the store
       value.close();
@@ -514,8 +513,9 @@ class CubitReactivityAdapter implements ReactivityAdapter {
 }
 
 void main() {
+  final store = createStore();
   // Register the adapter globally
-  $store.reactivity.addAdapter(const CubitReactivityAdapter());
+  store.reactivity.addAdapter(const CubitReactivityAdapter());
 
   runApp(const StoreScope(child: MyApp()));
 }
