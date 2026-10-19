@@ -63,12 +63,7 @@ class ImpulseReference<T> {
 @immutable
 class FactoryRef<T> extends ImpulseReference<T> {
   /// Creates a [FactoryRef] with a [create] function and an optional [dispose] function.
-  const FactoryRef(
-    super.create, {
-    super.reassemble,
-    super.recreateOnReassemble,
-    super.dispose,
-  }) : super(isFactory: true, keepAlive: true);
+  const FactoryRef(super.create) : super(isFactory: true, keepAlive: true);
 }
 
 /// A reference that creates and caches a single instance in the store.
