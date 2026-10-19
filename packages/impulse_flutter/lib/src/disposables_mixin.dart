@@ -40,10 +40,12 @@ mixin Disposables<W extends StatefulWidget> on State<W> {
 
     var obj = create(store);
 
+    dispose ??= store.reactivity.onDispose;
+
     if (reassemble != null) {
       _reassembles.add(() {
         if (recreateOnReassemble) {
-          store.reactivity.onDispose(obj);
+          dispose!(obj);
           store = StoreScope.of(context, depend: false);
           obj = create(store);
         }
@@ -51,11 +53,8 @@ mixin Disposables<W extends StatefulWidget> on State<W> {
         reassemble(obj);
       });
     }
-    if (dispose != null) {
-      _disposals.add(() => dispose(obj));
-    } else {
-      _disposals.add(() => store.reactivity.onDispose(obj));
-    }
+
+    _disposals.add(() => dispose!(obj));
 
     return obj;
   }

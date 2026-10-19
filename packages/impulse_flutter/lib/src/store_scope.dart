@@ -59,7 +59,11 @@ class StoreScope extends StatefulWidget {
     if (!storeElement.hasRegisteredDisposalForElement(element, ref.key)) {
       final dispose = storeWidget.store.watch(
         ref,
-        (_) => element.markNeedsBuild(),
+        (_) {
+          // The unbind is deferred until the end of the frame, so a late
+          // notification can still arrive after the element was unmounted.
+          if (element.mounted) element.markNeedsBuild();
+        },
       );
 
       storeElement.registerDisposal(element, ref.key, dispose);
@@ -120,8 +124,7 @@ class _StoreScopeState extends State<StoreScope> {
     super.didUpdateWidget(oldWidget);
 
     if (widget.store == oldWidget.store) return;
-
-    _store.reset();
+    if (oldWidget.store == null) _store.reset();
 
     if (widget.store == null) {
       _store = createStore();
@@ -163,6 +166,8 @@ class _InheritedStoreElement extends InheritedElement {
   _InheritedStoreElement(super.widget);
 
   final _disposeHooks = HashMap<Element, List<_KeyDisposal>>();
+  final _teardownCandidates = HashSet<Element>();
+  var _teardownScheduled = false;
 
   bool hasRegisteredDisposalForElement(Element element, Object key) {
     final hooks = _disposeHooks[element];
@@ -180,23 +185,55 @@ class _InheritedStoreElement extends InheritedElement {
     hooks.add((key: key, dispose: dispose));
   }
 
+  void _scheduleTeardown() {
+    if (_teardownScheduled) return;
+    _teardownScheduled = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _teardownScheduled = false;
+      _settleTeardowns();
+    });
+  }
+
+  void _settleTeardowns() {
+    final candidates = _teardownCandidates.toList();
+    _teardownCandidates.clear();
+
+    for (final element in candidates) {
+      // Elements reactivated within the frame (e.g. by a GlobalKey move) never
+      // truly left and must keep their binding.
+      if (element.mounted) continue;
+
+      final hooks = _disposeHooks.remove(element);
+      if (hooks == null) continue;
+
+      for (final hook in hooks) {
+        hook.dispose();
+      }
+    }
+  }
+
   @override
   void updated(_InheritedStore oldWidget) {
     if ((widget as _InheritedStore).updateShouldNotify(oldWidget)) {
+      for (final hooks in _disposeHooks.values) {
+        for (final hook in hooks) {
+          hook.dispose();
+        }
+      }
       _disposeHooks.clear();
+      _teardownCandidates.clear();
       super.updated(oldWidget);
     }
   }
 
   @override
   void removeDependent(Element dependent) {
-    final hooks = _disposeHooks[dependent];
-
-    if (hooks != null) {
-      for (final hook in hooks) {
-        hook.dispose();
-      }
-    }
+    // Flutter calls this on every deactivation, including transient ones such
+    // as GlobalKey moves. The unbind is deferred to the end of the frame so an
+    // element that comes back in the same frame never loses its binding.
+    _teardownCandidates.add(dependent);
+    _scheduleTeardown();
 
     super.removeDependent(dependent);
   }

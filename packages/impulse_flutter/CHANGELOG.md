@@ -1,3 +1,9 @@
+## 0.11.0
+- Fixed widgets losing their binding when moved in the widget tree (e.g. `GlobalKey` reparenting). Deactivation no longer unbinds; disposal settles at the end of the frame.
+- Fixed a store swap resetting a user-provided store.
+- `Disposables.managed` now runs the custom dispose callback for objects replaced on reassemble.
+- Updated dependency on `impulse` to `^0.11.0`.
+
 ## 0.10.0
 - Fixed outdated code documentation and README example.
 - Updated dependency on `impulse` to `^0.10.0`.

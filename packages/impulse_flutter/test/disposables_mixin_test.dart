@@ -88,6 +88,26 @@ void main() {
       expect(recreated!.disposed, isTrue);
     });
 
+    testWidgets('invokes the custom dispose callback for an object replaced on reassemble', (
+      tester,
+    ) async {
+      late DisposablesHarnessState state;
+      final disposed = <TestPlain>[];
+
+      await tester.pumpWidget(_Harness(onInitState: (s) => state = s));
+
+      final original = state.managed(
+        (store) => TestPlain(store),
+        reassemble: (obj) {},
+        recreateOnReassemble: true,
+        dispose: disposed.add,
+      );
+
+      state.reassemble();
+
+      expect(disposed, equals([original]));
+    });
+
     testWidgets('runs reassemble callbacks on every reassemble', (tester) async {
       final reassembled = <Object>[];
       late DisposablesHarnessState state;

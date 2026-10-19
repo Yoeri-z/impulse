@@ -89,6 +89,28 @@ void main() {
         verify(() => mock.onDispose()).called(times);
     void verifyNeverDisposed() => verifyNever(() => mock.onDispose());
 
+    Widget moveTree({
+      required GlobalKey key,
+      required bool isFlipped,
+      required Widget child,
+    }) {
+      Widget slot() => KeyedSubtree(key: key, child: child);
+
+      return Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.zero,
+            child: isFlipped ? const SizedBox() : slot(),
+          ),
+          const Text('Anchor'),
+          Padding(
+            padding: EdgeInsets.zero,
+            child: isFlipped ? slot() : const SizedBox(),
+          ),
+        ],
+      );
+    }
+
     testWidgets('ref.bind binds and initializes object', (tester) async {
       await tester.pumpWidget(TestApp(child: RefTextBuilder(ref: testRef)));
 
@@ -208,6 +230,77 @@ void main() {
         verifyDisposed(1);
       },
     );
+
+    testWidgets('a reactivated widget keeps updating after a move', (tester) async {
+      final state = StateMock();
+      final stateRef = Ref((store) => state);
+      final key = GlobalKey();
+      final flipped = ValueNotifier(false);
+      var buildCount = 0;
+
+      Widget bound() => Builder(
+        builder: (context) {
+          buildCount++;
+          context.use(stateRef);
+          return const Text('Bound');
+        },
+      );
+
+      await tester.pumpWidget(
+        TestApp(
+          child: ValueListenableBuilder(
+            valueListenable: flipped,
+            builder: (context, isFlipped, _) =>
+                moveTree(key: key, isFlipped: isFlipped, child: bound()),
+          ),
+        ),
+      );
+
+      flipped.value = true;
+      await tester.pumpAndSettle();
+      final buildsAfterMove = buildCount;
+
+      state.increment();
+      await tester.pump();
+
+      expect(buildCount, equals(buildsAfterMove + 1));
+    });
+
+    testWidgets('a move keeps the bound object alive', (tester) async {
+      var createCount = 0;
+      var disposeCount = 0;
+      final stateRef = Ref(
+        (store) {
+          createCount++;
+          return StateMock();
+        },
+        dispose: (value) => disposeCount++,
+      );
+      final key = GlobalKey();
+      final flipped = ValueNotifier(false);
+
+      Widget bound() => Builder(
+        builder: (context) {
+          context.use(stateRef);
+          return const Text('Bound');
+        },
+      );
+
+      await tester.pumpWidget(
+        TestApp(
+          child: ValueListenableBuilder(
+            valueListenable: flipped,
+            builder: (context, isFlipped, _) =>
+                moveTree(key: key, isFlipped: isFlipped, child: bound()),
+          ),
+        ),
+      );
+
+      flipped.value = true;
+      await tester.pumpAndSettle();
+
+      expect((createCount, disposeCount), equals((1, 0)));
+    });
   });
 
   group('Reactivity', () {
@@ -297,6 +390,32 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('s2'), findsOneWidget);
+    });
+
+    testWidgets('swapping stores does not reset the previous user-provided store', (
+      tester,
+    ) async {
+      final store1 = createStore();
+      final store2 = createStore();
+      final mock = MockDependency();
+      final ref = Ref((s) => mock, dispose: (m) => m.onDispose());
+      store1.init(ref);
+
+      final storeNotifier = ValueNotifier<Store>(store1);
+
+      await tester.pumpWidget(
+        ValueListenableBuilder<Store>(
+          valueListenable: storeNotifier,
+          builder: (context, store, _) =>
+              TestApp(store: store, child: const Text('Bound')),
+        ),
+      );
+
+      storeNotifier.value = store2;
+      await tester.pumpAndSettle();
+
+      verifyNever(() => mock.onDispose());
+      expect(store1.exists(ref), isTrue);
     });
 
     testWidgets('StoreScope resets store on dispose', (tester) async {
