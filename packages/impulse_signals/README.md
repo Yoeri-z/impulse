@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/Yoeri-z/impulse/graph/badge.svg)](https://codecov.io/gh/Yoeri-z/impulse)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Impulse extension for [`signals`](https://dartsignals.dev/) by Rody Davis. This package provides a `Controller` class that simplifies managing the lifecycle of multiple signals and effects, similar to `SignalsMixin`. It also exports `impulse_flutter` and `signals_flutter` so everything is neatly provided in a single library.
+Impulse extension for [`signals`](https://dartsignals.dev/) by Rody Davis. This package provides a `Controller` class that simplifies managing the lifecycle of multiple signals and effects. It also exports `impulse_flutter` and `signals_flutter` so everything is neatly provided in a single library.
 
 ## Features
 
