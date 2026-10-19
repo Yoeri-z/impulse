@@ -6,8 +6,6 @@
 
 Impulse Flutter is a state management and dependency injection library for Flutter. It provides central state containers, dependency tracking, and automatic lifecycle management.
 
-State objects are defined using references, which are consumed by widgets through context extensions. When widgets unmount and the reference count of a state object drops to zero, Impulse automatically disposes of it.
-
 ---
 
 ## Features
@@ -17,6 +15,7 @@ State objects are defined using references, which are consumed by widgets throug
 - **Dependency Injection**: Declare type-safe references and retrieve or override them as needed.
 - **Flutter Integration**: Built-in support for standard Flutter `Listenable` and `ChangeNotifier` classes.
 - **Testable**: Supports isolated stores and reference overrides for widget and unit testing.
+- **Flexible**: The package is designed as a simple and controllable dependency and reactivity registry that works with any piece of state. It easily combines with other packages.
 
 ---
 
@@ -523,11 +522,36 @@ void main() {
 
 ---
 
-## See Also
 
-- [impulse](https://pub.dev/packages/impulse) for core concepts and advanced usage.
-- [impulse_signals](https://pub.dev/packages/impulse_signals) for signals integration.
-- [API reference](https://pub.dev/documentation/impulse_flutter/latest/) for a detailed description of all API points.
+## Why Impulse
+
+Impulse is a state management and dependency injection library that lets you register any object in a store and make widgets depend on it. This section compares it to other popular solutions and describes the trade-offs involved. Be warned, this section is opinionated.
+
+### Compared to Riverpod
+
+Riverpod is the most similar solution to Impulse. Impulse uses the same reference model: you declare refs that describe how an object is created, and the store caches and manages instances based on those refs.
+
+The difference is in how widgets consume that state. Riverpod recommends `ConsumerWidget` or `ConsumerStatefulWidget`, which replaces the standard `StatelessWidget` and `StatefulWidget` classes. Reading and mutating state happens through the `ref` object that these widgets receive, which means imperative calls end up inside the `build` method. This breaks with the core primitives of Flutter, where `build` is meant to be a pure description of the UI.
+
+Impulse keeps the standard widget classes and the standard `build` method. Widgets bind to a ref explicitly through the `Binder`, `Selector` and `AsyncSelector` widgets, and mutate state from event handlers, callbacks, or controllers. State changes happen where events happen, not inside `build`.
+
+Another difference is that Riverpod bakes its behaviors into the provider itself, which gives you a large family of provider types to pick from. Impulse keeps its references dumb and puts that responsibility on the registered objects instead.
+
+Refs in Impulse are also designed to work with Flutter natives and a wider range of objects. Plain `Listenable`s, `ChangeNotifier`s and arbitrary objects can be registered, tracked and disposed of without being wrapped in provider specific types. They also give you more control over reassemble behavior.
+
+### Compared to Bloc / Provider
+
+Bloc is essentially Provider with a the `Bloc` and `Cubit` class. That classes work with Impulse too: you can register a bloc or cubit like any other object and dispose of it automatically.
+
+The difference with Provider is how the wiring is declared. With Provider, composing dependencies means stacking providers and wiring them together by hand, and resolving a dependency by type from higher up the tree is weak. With Impulse, a ref declares what an object is, how it is created, and what it depends on in a single place. This makes the dependency graph more declarative and easier to reason about.
+
+### Compared to Signals
+
+Signals solves reactivity well but offers little in terms of dependency injection. Reactive values are declared globally, so anything beyond simple use cases still needs a second solution for object creation and lifecycle management. In those cases Impulse can replace signals entirely, or be used alongside them.
+
+A more opinionated note: signals often make things more complex than they need to be once you go beyond simple use cases. Reactive graphs tend to grow in places where a plain, managed object would have been simpler.
+
+---
 
 ## License
 

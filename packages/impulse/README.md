@@ -6,8 +6,6 @@
 
 Easy and simple state management solution that mainly functions as a dependency injection service and integrates well with other state management solutions.
 
-Impulse provides a lightweight way to manage shared state and dependencies using a central `Store` and type-safe `References`.
-
 ## Quick start
 
 Add Impulse to your project:
