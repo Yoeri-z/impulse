@@ -5,13 +5,13 @@ description: "Patterns for using impulse_flutter (state management & DI). Use wh
 
 # Impulse Flutter
 
-State management & DI library built around three concepts:
+State management & DI without code generation. Declare refs, let a store cache the objects, let widgets depend on them. Lifecycle is automatic: objects are disposed and dropped when the last dependent widget unmounts.
 
-- **Store**: a central container that caches active state objects and manages their lifecycle.
-- **StoreScope**: a widget that provides the store to the widget tree (defaults to the global `$store` store) and tracks widget lifecycles.
-- **Refs**: global definitions describing how a state object is created and its lifecycle. Widgets request objects through refs from the store.
+## Core concepts
 
-`Ref` and `FamilyRef` increment their count when a widget depends on them and automatically call `dispose()` (on `ChangeNotifier`/`Disposable`) and drop the object from the store when the last widget unmounts. This means no manual lifecycle management.
+- **Store**: central container that caches active state objects and manages their lifecycle. The default instance is the global `$store`; create isolated ones with `createStore()`.
+- **StoreScope**: widget that provides a `Store` to the tree and tracks widget lifecycles so refs can be released when widgets unmount.
+- **Ref**: global definition of how a state object is created and managed. Widgets request objects from the store through refs.
 
 ## Setup
 
@@ -19,46 +19,57 @@ State management & DI library built around three concepts:
 flutter pub add impulse_flutter
 ```
 
-Wrap the app in a `StoreScope` and define refs globally:
+Define refs globally, wrap the app in `StoreScope`:
 
 ```dart
-final counterRef = Ref((store) => ValueNotifier(0));
+final counterRef = Ref((store) => ValueNotifier(0)); // ChangeNotifier/Listenable supported natively
 
 void main() => runApp(const StoreScope(child: MyApp()));
 ```
 
-## Refs
+## Ref types
 
-Pick the ref type based on the lifecycle you want, below are usage examples of each Ref type:
+| Type | Behavior | Use for |
+|---|---|---|
+| `Ref<T>` | caches one instance, disposed + dropped when last dependent widget unmounts | default choice |
+| `SingletonRef<T>` | cached until `store.reset()` | objects that must outlive widgets |
+| `FamilyRef<T, R>` | one cached instance per parameter | per-id state (chat rooms, etc.) |
+| `FactoryRef<T>` | no caching, new instance per request | transient values |
 
 ```dart
-// Managed: cached single instance, disposed when the last dependent widget unmounts.
 final authServiceRef = Ref((store) => AuthService(), dispose: (s) => s.cleanup());
-
-// Singleton: never dropped until store.reset(); use when the object must survive
-// even when no widget is currently using it.
 final configRef = SingletonRef((store) => Config());
-
-// Parametrized: one cached instance per input value (e.g. per id).
 final chatRoomRef = FamilyRef<ChatController, String>(
   (store, roomId) => ChatController(roomId: roomId),
 );
-final chat = context.use(chatRoomRef('room-123'));
-
-// Factory: no caching, a new instance per request; use for transient values.
 final uuidRef = FactoryRef((store) => const Uuid().v4());
+```
 
-// Async: caches a FutureNotifier<T> that wraps the async call.
+Ref parameters for lifecycle control:
+
+```dart
+final authServiceRef = Ref(
+  (store) => AuthService(),
+  reassemble: (s) => ...,    // runs on hot reload while the object is alive
+  recreateOnReassemble: true, // recreate the object (and its deps) on hot reload
+  dispose: (s) => ...,        // override the default disposal logic
+);
+```
+
+### Async refs
+
+```dart
+// Wraps the async call in a FutureNotifier<T>.
 final userFutureRef = futureRef((store) async => getUser(store.get(userIdRef)));
 
-// Stream: opens a stream subscription (cancels on dispose) and exposes its state reactively.
+// Wraps a stream subscription (cancelled on dispose) in a StreamNotifier<T>.
 final messagesRef = streamRef((store) => api.watchMessages(store.get(roomIdRef)));
 ```
 
-Inside ref creation callbacks and notifier bodies you can resolve other refs with `store.get(refRef)`. Sync `store` access must happen **before** the first async gap, otherwise a debug-mode error is triggered:
+In ref callbacks, `store.get` must happen **before** the first `await` (debug-mode error otherwise):
 
 ```dart
-// wrong: store.get after await
+// wrong
 futureRef((store) async { await doFoo(); return getUser(store.get(idRef)); });
 
 // right
@@ -67,12 +78,26 @@ futureRef((store) async { final id = store.get(idRef); await doFoo(); return get
 
 ## Reading state in widgets
 
-Two context extensions exist:
+- `context.use(ref)`: registers a dependency; the widget rebuilds when the object notifies.
+- `context.read(ref)`: no dependency registered; for reading/mutating in callbacks and effects only.
 
-- `context.use(ref)`: registers a dependency, the widget rebuilds whenever the state notifies.
-- `context.read(ref)`: no dependency registered; use in callbacks to mutate/read state without rebuilding. (Reading a managed ref without ever `use`-ing it triggers a debug-mode error.)
+```dart
+class CounterPage extends StatelessWidget {
+  const CounterPage({super.key});
 
-Prefer `Binder`/`Selector`/`Async*` widgets over `context.use`: they localize rebuilds to a small builder and are more explicit.
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(child: Text('Count: ${context.use(counterRef).value}')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.read(counterRef).value++,
+      ),
+    );
+  }
+}
+```
+
+Prefer the binder widgets — they localize rebuilds and are more explicit. Use `context.use` only in small widgets.
 
 ```dart
 Binder(ref: authRef, builder: (context, auth) { /* rebuilds on every notify */ });
@@ -80,63 +105,84 @@ Binder(ref: authRef, builder: (context, auth) { /* rebuilds on every notify */ }
 Selector(
   ref: counterRef,
   selector: (c) => c.count,
-  builder: (context, count) => Text('$count'), // rebuilds only when count changes value
+  builder: (context, count) => Text('$count'), // rebuilds on value change only
 );
-```
 
-For small widgets `context.use` is fine:
-
-```dart
-final counter = context.use(counterRef); // rebuilds on notify
-context.read(counterRef).value++;        // read without dependency (callbacks)
-```
-
-When the state is async, use `AsyncSelector`/`AsyncBuilder` which handle all three states:
-
-```dart
-AsyncBuilder(
-  notifier: userNotifier, // a FutureNotifier or StreamNotifier
+AsyncSelector(
+  ref: authRef,
+  selector: (auth) => auth.userState, // an AsyncState
   loadingBuilder: (c, prev) => const CircularProgressIndicator(),
-  dataBuilder: (c, user) => Text(user.name),
+  dataBuilder: (c, user) => Text('Active user ${user.name}'),
+  errorBuilder: (c, err, st, prev) => Text(err.toString()),
+);
+
+AsyncBuilder(
+  notifier: messagesNotifier, // a FutureNotifier or StreamNotifier
+  loadingBuilder: (c, prev) => const CircularProgressIndicator(),
+  dataBuilder: (c, messages) => MessageList(messages),
   errorBuilder: (c, err, st, prev) => Text(err.toString()),
 );
 ```
 
+A `Ref`/`FamilyRef` that is only ever read (never `use`-d) is considered a memory leak and triggers a debug-mode error; use a `SingletonRef` if that's genuinely needed.
+
 ## AsyncState
 
-`FutureNotifier<T>` and `StreamNotifier<T>` expose their state as `AsyncState<T>` (`AsyncData`, `AsyncError`, `AsyncLoading`):
+`FutureNotifier<T>`/`StreamNotifier<T>` expose state as `AsyncState<T>` (`AsyncData`, `AsyncError`, `AsyncLoading`):
 
 ```dart
 final notifier = store.get(userFutureRef);
-final (user, err) = notifier();                       // destructure current state
+
+final (user, err) = notifier(); // destructure current state
 switch (notifier.state) {
-  AsyncData(:final value) => print('user: $value'),
-  AsyncError(:final error) => print('error: $error'),
   AsyncLoading() => print('loading'),
+  AsyncData(:final value) => print(value),
+  AsyncError(:final error) => print(error),
 }
-notifier.refresh(); // re-subscribe while keeping old value/error
-notifier.reload();  // re-subscribe, discarding old value/error
+
+notifier.isLoading; notifier.hasValue; notifier.hasError;
+notifier.value; notifier.error; notifier.stackTrace;
+
+notifier.refresh(); // re-subscribe, keep old value/error
+notifier.reload();  // re-subscribe, discard old value/error
 ```
 
-For fallible async work, use `attempt`, which returns a `Result` instead of throwing:
+`StreamNotifier` additionally exposes `notifier.isDone` (stream closed).
+
+Fallible async work: use `attempt`, which returns a `Result` instead of throwing:
 
 ```dart
 final (value, err) = (await attempt(() => foo())).unpacked;
 if (err != null) { handleError(err); }
 ```
 
-Optional: support third-party state objects (e.g. Cubit) by adding a `ReactivityAdapter` to `$store.reactivity` that subscribes on bind and cleans up on dispose.
+`FutureNotifier`/`StreamNotifier` can also be owned directly by a `State` when the value doesn't need sharing through the store. The constructor starts immediately, so create lazily and dispose:
+
+```dart
+class _FooState extends State<Foo> {
+  late final StreamNotifier<List<Message>> messagesNotifier;
+
+  @override
+  void initState() {
+    super.initState();
+    messagesNotifier = StreamNotifier(() => api.watchMessages(widget.roomId));
+  }
+
+  @override
+  void dispose() { messagesNotifier.dispose(); super.dispose(); }
+}
+```
 
 ## Widget-local Disposables
 
-For objects scoped to a single `State` (a `TextEditingController`, a notifier sourced from widget state), use the `Disposables` mixin instead of a ref. It follows the same `create`/`reassemble`/`dispose` contract as refs; disposal routes through the store's reactivity system (`ChangeNotifier`/`Disposable` are auto-disposed):
+For objects scoped to a single `State` (e.g. `TextEditingController`, a notifier sourced from widget state), use the `Disposables` mixin instead of refs. Refs are for cross-widget DI. Same `create`/`reassemble`/`dispose` contract as refs; disposal routes through the store's reactivity system (`ChangeNotifier`/`Disposable` auto-disposed):
 
 ```dart
 class _ChatPageState extends State<ChatPage> with Disposables {
   late final textController = managed((store) => TextEditingController());
 
   late final messagesNotifier = managed(
-    (store) => StreamNotifier(() => api.watchMessages(widget.roomId)),
+    () => StreamNotifier(() => api.watchMessages(widget.roomId)),
     reassemble: (n) => n.reload(), // hot reload hook
   );
 
@@ -152,11 +198,11 @@ class _ChatPageState extends State<ChatPage> with Disposables {
 }
 ```
 
-Note: `managed` uses `StoreScope.of(context, depend: false)`, so it also works in `initState`. Use refs for cross-widget DI and `Disposables` for single-State scope.
+`managed` uses `StoreScope.of(context, depend: false)`, so it also works in `initState`.
 
 ## Testing
 
-Use an isolated `Store` with reference overrides, never the global `$store` (which would leak state between tests):
+Use an isolated store with reference overrides — never the global `$store` (leaks state between tests):
 
 ```dart
 setUp(() {
@@ -165,12 +211,57 @@ setUp(() {
   testStore.override(apiServiceRef, (store) => mockApi);
 });
 
-tearDown(() => testStore.reset()); // disposes everything, prevents leaks
+tearDown(() => testStore.reset()); // disposes everything
 
-await tester.pumpWidget(
-  StoreScope(
-    store: testStore,
-    child: const MaterialApp(home: ProfileScreen()),
-  ),
-);
+  testWidgets(..., (tester) async {
+    when(() => mockApi.getUserName()).thenAnswer((_) async => 'Test Mock User');
+
+    await tester.pumpWidget(
+      StoreScope(
+        store: testStore, // Supply the isolated test store
+        child: const MaterialApp(
+          home: ProfileScreen(),
+        ),
+      ),
+    );
+
+    expect(find.text('Test Mock User'), findsOneWidget);
+  });
 ```
+
+## Custom Reactivity (optional)
+
+The default store handles `Listenable`/`ValueNotifier`/`ChangeNotifier`. Add a `ReactivityAdapter` to `$store.reactivity` for third-party state. Below is an example for making an adapter for Bloc:
+
+```dart
+class CubitReactivityAdapter implements ReactivityAdapter {
+  const CubitReactivityAdapter();
+
+  @override
+  void Function()? onBind(dynamic value, void Function() notify) {
+    if (value is BlocBase) {
+      final sub = value.stream.listen((_) => notify());
+      return () => sub.cancel();
+    }
+    return null;
+  }
+
+  @override
+  void onDispose(dynamic value) {
+    if (value is BlocBase) value.close();
+  }
+}
+
+final store = createStore();
+store.reactivity.addAdapter(const CubitReactivityAdapter());
+```
+
+## Rules (enforce these)
+
+1. **Never use `context.read` for UI values.** Callbacks and effects only. If you need a read-only ref, use a `SingletonRef`.
+2. **Prefer `Binder`/`Selector`/`AsyncSelector`/`AsyncBuilder` over `context.use`.** Use `context.use` only in small widgets.
+3. **Call `context.use` exactly at the site where the value is used** — it's cheap, and it localizes rebuilds.
+4. **Resolve `store.get` before the first `await` in ref callbacks.** Debug-mode error otherwise.
+5. **In tests, always use `createStore()` + `override`, never the global `$store`.** Reset in `tearDown`.
+6. **Widget-local state uses the `Disposables` mixin, not refs.** Refs are for cross-widget DI only.
+7. **Pick the ref type deliberately**: `Ref` by default, `SingletonRef` only when the object must outlive widgets, `FamilyRef` for per-parameter state, `FactoryRef` for transient values.

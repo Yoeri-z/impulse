@@ -70,7 +70,7 @@ Key Store API methods:
 
 ### Reference Types
 
-References define how dependencies are created, cached, and disposed. Impulse provides three primary reference types:
+References define how dependencies are created, cached, and disposed. Impulse provides four primary reference types:
 
 #### 1. `Ref<T>` (Reference)
 
@@ -83,7 +83,7 @@ final stopwatchRef = Ref(
 );
 ```
 
-#### 2 `SingletonRef<T>` (Singleton Reference)
+#### 2. `SingletonRef<T>` (Singleton Reference)
 
 Caches a single instance of `T` in the store forever (until the store is reset).
 
@@ -116,9 +116,14 @@ final profileA = store.get(userProfileRef('Alice'));
 final profileB = store.get(userProfileRef('Bob'));
 ```
 
-#### 5. `futureRef<T>` (Handling futures)
+### Helpers
+
+`futureRef` and `streamRef` are convenience functions that create a `Ref` wrapping a special notifier object.
+
+#### `futureRef<T>` (Handling futures)
 
 `futureRef` is a function that returns a `Ref` with a `FutureNotifier<T>` object. A `FutureNotifier<T>` is a special notifier that wraps an async call with a neat interface and exposes its state as an `AsyncValue<T>`.
+
 ```dart
 final userFutureRef = futureRef((store) async => await getUser(store.get(userId)));
 
@@ -148,7 +153,7 @@ notifier.refresh();
 // to reload, discarding old value or error
 notifier.reload();
 ```
-You may only use the store to get other references before introducing an async gap.
+You may only access the store (via `store.get`) before the first `await`.
 ```dart
 // this is not allowed
 futureRef((store) async{  
@@ -168,7 +173,7 @@ futureRef((store) async{
 });
 ```
 
-#### 6. `streamRef<T>` (Handling streams)
+#### `streamRef<T>` (Handling streams)
 
 `streamRef` is a function that returns a `Ref` with a `StreamNotifier<T>` object. A `StreamNotifier<T>` wraps a subscription to a stream and exposes its state reactively.
 
@@ -235,14 +240,14 @@ import 'package:impulse/impulse.dart';
 
 Future<String> foo() async {
   // Can throw an error
-  return throw ExcepCaches a single instance of `T` in the store forever (until the store is reset).tion('Network timeout');
+  return throw Exception('Network timeout');
 }
 
 void main() async {
   final result = await attempt(() => foo());
 
   if (result is AsyncFailure<String>) {
-    logErr(result)
+    logErr(result);
     return;
   }
 
@@ -253,8 +258,8 @@ void main() async {
 
   final (value, err) = await attempt(() => bar).unpacked;
 
-  if(err != null){
-    logErr(err)
+  if (err != null) {
+    logErr(err);
   }
 
   print('Fetched value: ${value!}');
@@ -388,19 +393,17 @@ final customStore = Store(
 
 ### Scopes
 
-The `withScope` function allows you to temporarily retain a reference in the store for the duration of an asynchronous callback. Once the callback completes (or throws), the reference is released. If its reference count drops to 0, it is automatically dropped and cleaned up.
+The `withScope` method temporarily retains a reference for the duration of an asynchronous callback, which receives the store and the produced value. Once the callback completes (or throws), the reference is released. If its reference count drops to 0, it is automatically dropped and cleaned up.
 
 ```dart
 final tempCacheRef = Ref((store) => TemporaryCache());
 
 void main() async {
-  final result = await withScope(
-    (store) async {
-      final cache = store.get(tempCacheRef);
+  final result = await $store.withScope(
+    tempCacheRef,
+    (store, cache) async {
       return await cache.loadSessionData();
     },
-    store: $store,
-    ref: tempCacheRef,
   );
 
   // Outside the scope, tempCacheRef has been automatically released and disposed!
@@ -432,7 +435,7 @@ When you call `store.get(ref)` or `store.watch(ref)`:
 
 ## See also
 
-- [impulse_flutter](https://pub.dev/packages/impulse_flutter) for a flutter integration using this package.
+- [impulse_flutter](https://pub.dev/packages/impulse_flutter) for a Flutter integration using this package.
 - [impulse_signals](https://pub.dev/packages/impulse_signals) for a signals addon to this package.
 - [API reference](https://pub.dev/documentation/impulse/latest/) for a detailed description of all API points.
 

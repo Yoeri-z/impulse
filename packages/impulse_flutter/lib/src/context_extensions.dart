@@ -31,7 +31,7 @@ extension GetContext on BuildContext {
           ),
           ErrorHint(
             'Because this reference has a dynamic lifetime, reading it blindly outside '
-            'the UI tree will instantiate it with a reference count of 0, potentially causing'
+            'the UI tree will instantiate it with a reference count of 0, potentially causing '
             'silent memory leaks.',
           ),
           ErrorHint(

@@ -8,15 +8,15 @@ import 'flutter_delegate.dart';
 
 /// A widget that provides a [Store] to its descendants.
 ///
-/// If [store] is not provided, the global [$store] will be used.
+/// If [store] is not provided, a new store created by [createStore] is used.
 class StoreScope extends StatefulWidget {
   /// Creates a [StoreScope] that wraps a [child].
-  /// If [store] is not provided, the global [$store] is used.
+  /// If [store] is not provided, a new store created by [createStore] is used.
   const StoreScope({super.key, this.store, required this.child});
 
   /// The store instance to be used by this scope.
   ///
-  /// if none is provided it will use the global [$store]
+  /// If none is provided, a new store created by [createStore] is used.
   final Store? store;
 
   /// The widget tree below this scope.
@@ -47,8 +47,8 @@ class StoreScope extends StatefulWidget {
 
     if (!_tryDepend(context)) {
       throw StateError(
-        '`context.of` should only be called when the widget is active'
-        'try moving the call or using `context.peek`',
+        '`context.use` should only be called when the widget is active, '
+        'try moving the call or using `context.read`',
       );
     }
 

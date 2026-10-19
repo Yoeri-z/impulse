@@ -11,7 +11,7 @@ Future<AsyncState<T>> attempt<T>(Future<T> Function() call) async {
   }
 }
 
-/// the value of an `AsyncState` unpacked into a record, usefull for linearizing the flow of async operations
+/// the value of an `AsyncState` unpacked into a record, useful for linearizing the flow of async operations
 /// in bodies of code.
 typedef Unpacked<T> = (T? value, AsyncError<T>? err);
 

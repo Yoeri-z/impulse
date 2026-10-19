@@ -66,7 +66,7 @@ class ImpulseBox<T> extends ImpulseNotifier {
   T produce() {
     if (disposed) {
       throw StateError(
-        'Tried to produce a value after box was disposed,'
+        'Tried to produce a value after box was disposed, '
         'if this is intended consider using `box.reset()` instead of `box.dispose`',
       );
     }

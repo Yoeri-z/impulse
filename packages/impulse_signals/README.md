@@ -20,7 +20,7 @@ Add `impulse_signals`:
 flutter pub add impulse_signals
 ```
 
-This readme is very brief and assumes you already know how `impulse_flutter` works. Read the `impulse_flutter` documentation [here](https://pub.dev/packages/impulse_flutter).
+This README assumes you already know how `impulse_flutter` works. Read the `impulse_flutter` documentation [here](https://pub.dev/packages/impulse_flutter).
 
 ## Usage Example
 
@@ -30,7 +30,7 @@ final counterRef = Ref((store) => CounterController());
 
 // 2. Define a controller
 class CounterController extends Controller {
-  // 3. create various singals using createX functions
+  // 3. create various signals using createX functions
   late final count = createSignal(0);
   late final countEven = createComputed(() => count.value % 2 == 0);
 
@@ -87,12 +87,12 @@ class CounterPage extends SignalWidget {
 }
 
 ```
-## Modifier async utilities
-The async utilities in this package use [AsyncState] from signals, other from that they remain the same as described in [impulse_flutter](https://pub.dev/packages/impulse_flutter)
+## Modified async utilities
+The async utilities in this package use [AsyncState] from signals, other than that they remain the same as described in [impulse_flutter](https://pub.dev/packages/impulse_flutter)
 
 ## Modified reactivity
 
-The package modifies how the store reacts to `ChangeNotifier`. If a value is a signal reactivity is disabled. This means it is safe to provide signals using `Ref`. It also automatically disposes signals whenever the `Ref` gets disposed. Behavior regarding `ChangeNotifiers` is otherwise unchanged and will behave exactly the same as it does in `signals_flutter`.
+The package modifies how the store reacts to `ChangeNotifier`. If a value is a signal, reactivity is disabled. This means it is safe to provide signals using `Ref`. It also automatically disposes signals whenever the `Ref` gets disposed. Behavior regarding `ChangeNotifiers` is otherwise unchanged and will behave exactly the same as it does in `signals_flutter`.
 
 ## See also
 

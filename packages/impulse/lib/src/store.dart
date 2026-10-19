@@ -43,7 +43,7 @@ class Store {
     return _store.containsKey(ref.key);
   }
 
-  /// Alias for [get], doesnt return a value but just initializes the reference
+  /// Alias for [get], doesn't return a value but just initializes the reference
   void init<T>(ImpulseReference<T> ref) {
     get<T>(ref);
   }
@@ -105,7 +105,7 @@ class Store {
   }
 
   /// Tells each box to reassemble
-  /// essentially this retracks dependencies without losing state
+  /// essentially this re-tracks dependencies without losing state
   void reassemble() {
     final boxes = _store.values.toList();
 

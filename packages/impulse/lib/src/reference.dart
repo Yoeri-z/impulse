@@ -45,7 +45,7 @@ class ImpulseReference<T> {
   /// This can be used to ensure compatibility with hot reload.
   final Update<T>? reassemble;
 
-  /// Wether or not the object should be discarded and recreated when a reassemble happens.
+  /// Whether or not the object should be discarded and recreated when a reassemble happens.
   ///
   /// This acts like a "hot restart" just for this object and all its dependencies.
   final bool recreateOnReassemble;
@@ -83,7 +83,7 @@ class Ref<T> extends ImpulseReference<T> {
 /// Commonly this is called a singleton.
 @immutable
 class SingletonRef<T> extends ImpulseReference<T> {
-  /// Creates a [Ref] with a [create] function.
+  /// Creates a [SingletonRef] with a [create] function.
   const SingletonRef(
     super.create, {
     super.reassemble,
@@ -108,10 +108,10 @@ class FamilyRef<T, R> {
 
   /// The function used to update the object when the box reassembles.
   ///
-  /// This usefull to ensure compatibility with hot reload.
+  /// This is useful to ensure compatibility with hot reload.
   final Update<T>? reassemble;
 
-  /// Wether or not the object should be discarded and recreated when a reassemble happens.
+  /// Whether or not the object should be discarded and recreated when a reassemble happens.
   ///
   /// This acts like a "hot restart" just for this object and all its dependencies.
   final bool recreateOnReassemble;

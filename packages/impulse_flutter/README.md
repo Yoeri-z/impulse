@@ -91,7 +91,7 @@ Impulse revolves around three primary concepts: the Store, StoreScope, and Refer
 ### 1. The Store & StoreScope
 
 - **The Store**: A central container where all active states and dependencies are cached and managed.
-- **StoreScope**: A Flutter widget that provides a `Store` to the widget tree. By default, it creates its own `Store` instance and passes it to the descendants.You can also pass in your own instance. It tracks widget lifecycles to automatically release references when widgets unmount.
+- **StoreScope**: A Flutter widget that provides a `Store` to the widget tree. By default, it creates its own `Store` instance and passes it to the descendants. You can also pass in your own instance. It tracks widget lifecycles to automatically release references when widgets unmount.
 
 ---
 
@@ -106,7 +106,6 @@ Caches a single instance of `T` in the store. By default, it is dropped from the
 ```dart
 final authServiceRef = Ref(
   (store) => AuthService(),
-  dispose: (service) => service.cleanup(), // Optional manual cleanup callback
 );
 ```
 
@@ -117,7 +116,6 @@ Caches a single instance of `T` in the store forever (until the store is reset).
 ```dart
 final authServiceRef = SingletonRef(
   (store) => AuthService(),
-  dispose: (service) => service.cleanup(), // Optional manual cleanup callback
 );
 ```
 
@@ -142,7 +140,26 @@ Does not cache instances. It evaluates the creation callback and returns a new i
 final uuidRef = FactoryRef((store) => const Uuid().v4());
 ```
 
-#### 5. `futureRef<T>` (Handling futures)
+#### Parameters
+References have a number of parameters to exert control over the object's lifecycle.
+
+```dart
+final authServiceRef = Ref(
+  (store) => AuthService(),
+  reassemble: (service) => ...  // Modify the services if a reassemble (hot reload) happens while it is alive.
+  recreateOnReassemble: true    // Recreates the object on reassemble. Essentially this means that this specific object
+                                // and all its dependencies do a "hot restart" when you hot reload. 
+                                // By default this is set to false.
+  dispose: (service) => ...     // override the default disposal adapters with custom dispose logic. 
+                                //(see the Reactivity adapters sections)
+);
+```
+
+### Helpers
+
+Some convenience functions are available that create a `Ref` wrapping a special notifier object.
+
+#### `futureRef<T>` (Handling futures)
 
 `futureRef` is a function that returns a `Ref` with a `FutureNotifier<T>` object. A `FutureNotifier<T>` is a special notifier that wraps an async call with a neat interface and exposes its state as an `AsyncValue<T>`.
 ```dart
@@ -194,7 +211,7 @@ futureRef((store) async{
 });
 ```
 
-#### 6. `streamRef<T>` (Handling streams)
+#### `streamRef<T>` (Handling streams)
 
 `streamRef` is a function that returns a `Ref` with a `StreamNotifier<T>` object. A `StreamNotifier<T>` wraps a subscription to a stream and exposes its state reactively.
 
@@ -231,7 +248,7 @@ notifier.reload();
 
 #### Using `FutureNotifier` and `StreamNotifier`
 
-`FutureNotifier` and `StreamNotifier` can also be used without refs and stores, e.g. owned by a `StatefulWidget`. This is often usefull because most async calls do not actually need to be shared through the `StoreScope`. Note that the constructor starts the future/subscription immediately, so create the notifier lazily (e.g. in `initState`) and `dispose()` it when done.
+`FutureNotifier` and `StreamNotifier` can also be used without refs and stores, e.g. owned by a `StatefulWidget`. This is often useful because most async calls do not actually need to be shared through the `StoreScope`. Note that the constructor starts the future/subscription immediately, so create the notifier lazily (e.g. in `initState`) and `dispose()` it when done.
 
 ```dart
 class _ChatPageState extends State<ChatPage> {
@@ -274,19 +291,19 @@ Widgets interact with references using context-based extensions. There are two p
 
 ### 1. `context.use(ref)`
 
-Makes the widget depend on the state object. The widget will automatically rebuild whenever the state object notifies of a change.
+Makes the widget depend on the state object. The widget will automatically rebuild whenever the state object notifies of a change. `context.use` can be called multiple times at nearly no cost; prefer using it exactly at the site where the value is used.
 
 ```dart
 @override
 Widget build(BuildContext context) {
-  final userProfile = context.use(userProfileRef);
-  return Text('Name: ${userProfile.name}');
+  return Text('Name: ${context.use(userProfileRef).name}');
 }
 ```
 
 ### 2. `context.read(ref)`
 
 Retrieves the state object without registering a dependency. The widget will not rebuild when the state object changes.
+Only use this in callbacks and effects, never use `context.read` to retrieve values for the UI.
 
 ```dart
 ElevatedButton(
@@ -316,9 +333,9 @@ Binder(
 
 Selector(
   ref: counterRef,
-  selector: (counter) => counter.count;
+  selector: (counter) => counter.count,
   builder: (context, count){
-    // rebuilds whenever the count changes to a different value then i previously was.
+    // rebuilds whenever the count changes to a different value than it previously was.
   }
 )
 
@@ -339,9 +356,9 @@ AsyncBuilder(
 
 ```
 
-For code hygiene it is prefered to use these widgets over the `context.use` method. These widgets are more explicit and readable. They also localize rebuilds which can have a noticable effect on performance in some cases.
+For code hygiene it is preferred to use these widgets over the `context.use` method. These widgets are more explicit and readable. They also localize rebuilds which can have a noticeable effect on performance in some cases.
 
-For small widgets `context.use` is fine and might even be prefered.
+For small widgets `context.use` is fine and might even be preferred.
 
 ## Handling errors
 
@@ -355,7 +372,7 @@ void main() async {
   final result = await attempt(() => foo());
 
   if (result is AsyncFailure<String>) {
-    logErr(result)
+    logErr(result);
     return;
   }
 
@@ -366,8 +383,8 @@ void main() async {
   
   final (value, err) = await attempt(() => bar()).unpacked;
 
-  if(err != null){
-    logErr(err)
+  if (err != null) {
+    logErr(err);
   }
 
   print('Fetched value: ${value!}');
@@ -397,7 +414,7 @@ If you don't want this behavior consider using a `SingletonRef` or a `FactoryRef
 
 Not everything belongs in the store. Some objects only make sense within a single widget (a `TextEditingController`, a `FutureNotifier` sourced from widget state). The `Disposables` mixin manages disposal of such objects for a `State`.
 
-It follows the same `create`/`reassemble`/`dispose` contract as references: the object is created on first access, recreated or updated on hot reload, and disposed when the state is disposed. Disposal goes through the store's reactivity system, so any type the configured `ReactivityAdapter`s handle (such as `ChangeNotifier` or `Disposable`) is disposed automatically.
+It follows the same `create`/`reassemble`/`dispose` contract as `Ref`: the object is created on first access, recreated or updated on hot reload, and disposed when the state is disposed. Disposal goes through the store's reactivity system, so any type the configured `ReactivityAdapter`s handle (such as `ChangeNotifier` or `Disposable`) is disposed automatically.
 
 ```dart
 class _ChatPageState extends State<ChatPage> with Disposables {
@@ -481,7 +498,7 @@ void main() {
 
 ### Custom Reactivity Adapters
 
-By default, the default the store made through `createStore()` supports Flutter's standard `Listenable`, `ValueNotifier`, and `ChangeNotifier` classes.
+By default, the store created through `createStore()` supports Flutter's standard `Listenable`, `ValueNotifier`, and `ChangeNotifier` classes.
 
 You can add custom `ReactivityAdapter`s to integrate third-party state managers or streams. Below is an example of an adapter for Cubit/BLoC:
 
@@ -541,15 +558,15 @@ Refs in Impulse are also designed to work with Flutter natives and a wider range
 
 ### Compared to Bloc / Provider
 
-Bloc is essentially Provider with a the `Bloc` and `Cubit` class. That classes work with Impulse too: you can register a bloc or cubit like any other object and dispose of it automatically.
+Bloc is essentially Provider with a `Bloc` and `Cubit` class. Those classes work with Impulse too: you can register a bloc or cubit like any other object and dispose of it automatically.
 
 The difference with Provider is how the wiring is declared. With Provider, composing dependencies means stacking providers and wiring them together by hand, and resolving a dependency by type from higher up the tree is weak. With Impulse, a ref declares what an object is, how it is created, and what it depends on in a single place. This makes the dependency graph more declarative and easier to reason about.
 
 ### Compared to Signals
 
-Signals solves reactivity well but offers little in terms of dependency injection. Reactive values are declared globally, so anything beyond simple use cases still needs a second solution for object creation and lifecycle management. In those cases Impulse can replace signals entirely, or be used alongside them.
+Signals solves reactivity well but offers little in terms of dependency injection. Signals are just primitives, very flexible but not very pragmatic on their own. In those cases Impulse can replace signals entirely, or be used alongside them.
 
-A more opinionated note: signals often make things more complex than they need to be once you go beyond simple use cases. Reactive graphs tend to grow in places where a plain, managed object would have been simpler.
+A more opinionated note: signals often make things more complex than they need to be once you go beyond simple use cases. Reactive graphs tend to grow in places where a plain, managed object would have been simpler. There is the performance argument that signals provide more fine-grained reactivity, but in reality Flutter is already very efficient in computing its rebuilds and there is really no need for it.
 
 ---
 

@@ -11,7 +11,7 @@ Future<AsyncState<T>> attempt<T>(Future<T> Function() call) async {
   }
 }
 
-/// the value of an `AsyncState` unpacked into a record, usefull for linearizing the flow of async operations
+/// the value of an `AsyncState` unpacked into a record, useful for linearizing the flow of async operations
 /// in bodies of code.
 typedef Unpacked<T> = (T? value, AsyncFailure<T>? err);
 
@@ -64,7 +64,7 @@ sealed class AsyncState<T> {
   /// Whether the asynchronous operation failed with an error.
   bool get hasError => error != null;
 
-  /// Wether this [AsyncState] is an [AsyncFailure]
+  /// Whether this [AsyncState] is an [AsyncFailure]
   bool get isFailure => this is AsyncFailure<T>;
 
   /// Cast this [AsyncState] to [AsyncFailure]
@@ -125,7 +125,7 @@ class AsyncLoading<T> extends AsyncState<T> {
 
   @override
   AsyncFailure<T> get asFailure => throw StateError(
-    'AsyncState is of type AsyncLoading, can not be casted to AsyncFailure',
+    'AsyncState is of type AsyncLoading, cannot be cast to AsyncFailure',
   );
 }
 
@@ -148,7 +148,7 @@ class AsyncData<T> extends AsyncState<T> {
 
   @override
   AsyncFailure<T> get asFailure => throw StateError(
-    'AsyncState is of type AsyncData, can not be casted to AsyncFailure',
+    'AsyncState is of type AsyncData, cannot be cast to AsyncFailure',
   );
 }
 

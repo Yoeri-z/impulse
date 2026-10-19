@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/Yoeri-z/impulse/graph/badge.svg)](https://codecov.io/gh/Yoeri-z/impulse)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-A minimalist, state management and dependency injection ecosystem for Dart and Flutter.
+A minimalist state management and dependency injection ecosystem for Dart and Flutter.
 
 This monorepo contains the following packages:
 

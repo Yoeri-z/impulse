@@ -39,14 +39,15 @@ Ref<FutureNotifier<T>> futureRef<T>(
 /// Wraps a single asynchronous call and exposes its loading/value/error
 /// state reactively.
 ///
-/// A [FutureNotifier] executes its [_call] immediately on construction. Use [reload]
+/// A [FutureNotifier] executes the wrapped call immediately on construction. Use [reload]
 /// to re-run it from a clean state (clearing the previous value/error first),
 /// or [refresh] to re-run it while keeping the previous value/error visible
 /// until the new result arrives (useful for pull-to-refresh style UIs where
 /// you don't want the UI to flash back to a loading state).
 class FutureNotifier<T> extends ImpulseNotifier
     implements AsyncStateListenable<T> {
-  /// Create a [FutureNotifier] wrapping a [call]
+  /// Create a [FutureNotifier] wrapping a call, with optional `onSuccess`/
+  /// `onError` side-effect callbacks.
   FutureNotifier(this._call, {this._onSuccess, this._onError}) {
     _run();
   }
@@ -55,12 +56,12 @@ class FutureNotifier<T> extends ImpulseNotifier
   /// [reload]/[refresh] can re-invoke it.
   final Future<T> Function() _call;
 
-  /// Called after [_call] completes successfully, before listeners are
+  /// Called after the wrapped call completes successfully, before listeners are
   /// notified. Useful for side effects (logging, analytics, cache writes)
   /// that should happen exactly once per successful completion.
   final void Function(T value)? _onSuccess;
 
-  /// Called after [_call] throws, before listeners are notified.
+  /// Called after the wrapped call throws, before listeners are notified.
   final void Function(Object error, StackTrace stackTrace)? _onError;
 
   AsyncState<T> _state = const AsyncState.loading();
