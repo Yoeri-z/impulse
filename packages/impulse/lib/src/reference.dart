@@ -26,6 +26,7 @@ class ImpulseReference<T> {
     required this.isFactory,
     required this.keepAlive,
     this.reassemble,
+    this.recreateOnReassemble = false,
     this.dispose,
     Object? key,
   }) : _key = key;
@@ -43,6 +44,11 @@ class ImpulseReference<T> {
   /// This can be used to ensure compatibility with hot reload.
   final Update<T>? reassemble;
 
+  /// Wether or not the object should be discarded and recreated when a reassemble happens.
+  ///
+  /// This acts like a "hot restart" just for this object and all its dependencies.
+  final bool recreateOnReassemble;
+
   /// Whether a new instance should be created every time it is requested.
   final bool isFactory;
 
@@ -57,16 +63,24 @@ class ImpulseReference<T> {
 @immutable
 class FactoryRef<T> extends ImpulseReference<T> {
   /// Creates a [FactoryRef] with a [create] function and an optional [dispose] function.
-  const FactoryRef(super.create, {super.reassemble, super.dispose})
-    : super(isFactory: true, keepAlive: true);
+  const FactoryRef(
+    super.create, {
+    super.reassemble,
+    super.recreateOnReassemble,
+    super.dispose,
+  }) : super(isFactory: true, keepAlive: true);
 }
 
 /// A reference that creates and caches a single instance in the store.
 @immutable
 class Ref<T> extends ImpulseReference<T> {
   /// Creates a [Ref] with a [create] function.
-  const Ref(super.create, {super.reassemble, super.dispose})
-    : super(isFactory: false, keepAlive: false);
+  const Ref(
+    super.create, {
+    super.reassemble,
+    super.recreateOnReassemble,
+    super.dispose,
+  }) : super(isFactory: false, keepAlive: false);
 }
 
 /// A reference that creates and caches a single instance in the store forever (until the store gets reset).
@@ -74,15 +88,24 @@ class Ref<T> extends ImpulseReference<T> {
 @immutable
 class SingletonRef<T> extends ImpulseReference<T> {
   /// Creates a [Ref] with a [create] function.
-  const SingletonRef(super.create, {super.reassemble, super.dispose})
-    : super(isFactory: false, keepAlive: true);
+  const SingletonRef(
+    super.create, {
+    super.reassemble,
+    super.recreateOnReassemble,
+    super.dispose,
+  }) : super(isFactory: false, keepAlive: true);
 }
 
 /// A reference that creates and caches unique instances based on an input parameter of type [R].
 @immutable
 class FamilyRef<T, R> {
   /// Creates a [FamilyRef] with a [create] function.
-  const FamilyRef(this.create, {this.reassemble, this.dispose});
+  const FamilyRef(
+    this.create, {
+    this.reassemble,
+    this.recreateOnReassemble = false,
+    this.dispose,
+  });
 
   /// The function used to create the object with a parameter.
   final FamilyCreate<T, R> create;
@@ -91,6 +114,11 @@ class FamilyRef<T, R> {
   ///
   /// This usefull to ensure compatibility with hot reload.
   final Update<T>? reassemble;
+
+  /// Wether or not the object should be discarded and recreated when a reassemble happens.
+  ///
+  /// This acts like a "hot restart" just for this object and all its dependencies.
+  final bool recreateOnReassemble;
 
   /// An optional function to handle manual disposal of the object.
   final Dispose<T>? dispose;
@@ -103,6 +131,7 @@ class FamilyRef<T, R> {
       isFactory: false,
       keepAlive: false,
       reassemble: reassemble,
+      recreateOnReassemble: recreateOnReassemble,
       dispose: dispose,
     );
   }

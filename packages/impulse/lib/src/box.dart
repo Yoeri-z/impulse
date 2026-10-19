@@ -151,6 +151,11 @@ class ImpulseBox<T> extends ImpulseNotifier {
   void reassemble() {
     if (_value == null) return;
 
+    if (ref.recreateOnReassemble) {
+      replace(_create(store));
+      return;
+    }
+
     ref.reassemble?.call(_value!);
   }
 

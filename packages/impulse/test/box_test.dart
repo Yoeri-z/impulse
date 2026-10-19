@@ -64,6 +64,7 @@ void main() {
     bool isFactory = false,
     bool keepAlive = false,
     void Function(int)? reassemble,
+    bool recreateOnReassemble = false,
   }) {
     ref = ImpulseReference<int>(
       create.call,
@@ -71,6 +72,7 @@ void main() {
       isFactory: isFactory,
       keepAlive: keepAlive,
       reassemble: reassemble,
+      recreateOnReassemble: recreateOnReassemble,
       dispose: dispose.call,
     );
     return ImpulseBox<int>(ref: ref, store: store, delegate: delegate);
@@ -324,5 +326,33 @@ void main() {
     box.reassemble();
 
     expect(reassembled, isTrue);
+  });
+
+  test('Reassemble recreates value when recreateOnReassemble is true', () {
+    final box = createBox(recreateOnReassemble: true);
+
+    whenCreate(10);
+    box.produce();
+    whenCreate(20);
+
+    box.reassemble();
+
+    verifyOnDispose(10);
+    verifyOnBind(20);
+  });
+
+  test('Reassemble with recreateOnReassemble does not call reassemble callback', () {
+    bool reassembled = false;
+    final box = createBox(
+      reassemble: (p0) => reassembled = true,
+      recreateOnReassemble: true,
+    );
+
+    whenCreate(10);
+    box.produce();
+
+    box.reassemble();
+
+    expect(reassembled, isFalse);
   });
 }
