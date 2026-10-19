@@ -1,3 +1,7 @@
+## 0.10.0
+- Added `recreateOnReassemble` parameter to `ImpulseReference`. When enabled, `reassemble()` fully recreates the object through its factory (like a "hot restart" for that object) instead of invoking the `reassemble` callback.
+- Fixed outdated code documentation.
+
 ## 0.9.0
 - Removed `AsyncResult`
 - removed `store` parameter from onDispose method in the `ReactivityAdapter` interface

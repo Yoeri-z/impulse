@@ -1,3 +1,7 @@
+## 0.10.0
+- Fixed outdated code documentation and README example.
+- Updated dependency on `impulse` to `^0.10.0`.
+
 ## 0.9.1
 - Added the `Disposables` mixin for managing disposal of widget-local state objects. `managed` follows the same `create`/`reassemble`/`dispose` contract as references and disposes through the store's reactivity system.
 

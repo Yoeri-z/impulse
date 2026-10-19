@@ -1,3 +1,6 @@
+## 0.10.0
+- Updated dependency on `impulse_flutter` to `^0.10.0`.
+
 ## 0.9.0
 - Updated dependency constraints on `impulse_flutter` introducting major breaking changes.
 - Removed the global `$store` because it is considered an anti pattern within flutter, and i found i never actually used it. 

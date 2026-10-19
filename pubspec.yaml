@@ -1,0 +1,9 @@
+name: impulse_workspace
+
+environment:
+  sdk: ^3.6.0
+
+workspace:
+  - packages/impulse
+  - packages/impulse_flutter
+  - packages/impulse_signals
