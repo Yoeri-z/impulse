@@ -121,6 +121,65 @@ void main() {
     });
   });
 
+  group('Nullable Values', () {
+    test('produces a null value', () {
+      final box = ImpulseBox<int?>(
+        ref: ImpulseReference<int?>(
+          (store) => null,
+          key: 'nullable',
+          isFactory: false,
+          keepAlive: false,
+        ),
+        store: store,
+        delegate: delegate,
+      );
+
+      final value = box.produce();
+
+      expect(value, isNull);
+    });
+
+    test('disposes a null value', () {
+      final nullDispose = MockDispose<int?>();
+      final box = ImpulseBox<int?>(
+        ref: ImpulseReference<int?>(
+          (store) => null,
+          key: 'nullable',
+          isFactory: false,
+          keepAlive: false,
+          dispose: nullDispose.call,
+        ),
+        store: store,
+        delegate: delegate,
+      );
+      box.produce();
+
+      box.dispose();
+
+      verify(() => nullDispose(null)).called(1);
+    });
+
+    test('reassembles a null value', () {
+      var reassembleCount = 0;
+      final box = ImpulseBox<int?>(
+        ref: ImpulseReference<int?>(
+          (store) => null,
+          key: 'nullable',
+          isFactory: false,
+          keepAlive: false,
+          reassemble: (value) => reassembleCount++,
+        ),
+        store: store,
+        delegate: delegate,
+      );
+      box.produce();
+
+      box.reassemble();
+
+      expect(reassembleCount, equals(1));
+    });
+  });
+
   group('Value Production (Singleton)', () {
     test('should initialize value on first produce', () {
       final box = createBox();

@@ -101,9 +101,10 @@ class FutureNotifier<T> extends ImpulseNotifier
   bool get isLoading => _state.isLoading;
 
   Future<void> _run() async {
+    _ident = Object();
+    final callIdent = _ident;
+
     try {
-      _ident = Object();
-      final callIdent = _ident;
       final result = await _call();
 
       if (disposed || callIdent != _ident) return;
@@ -112,7 +113,7 @@ class FutureNotifier<T> extends ImpulseNotifier
       onSuccess?.call(result);
       notify();
     } catch (e, st) {
-      if (disposed) return;
+      if (disposed || callIdent != _ident) return;
       _state = AsyncState.error(e, st, previousValue: _state.value);
       onError?.call(e, st);
       notify();

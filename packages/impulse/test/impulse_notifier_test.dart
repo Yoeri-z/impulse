@@ -134,6 +134,27 @@ void main() {
       expect(listener1Count, equals(2));
       expect(listener2Count, equals(1));
     });
+
+    test('safely handles a listener notifying again during notify()', () {
+      var listener1Count = 0;
+      var listener2Count = 0;
+
+      void listener2() => listener2Count++;
+
+      void listener1() {
+        listener1Count++;
+        notifier.removeListener(listener1);
+        notifier.notify();
+      }
+
+      notifier.addListener(listener1);
+      notifier.addListener(listener2);
+
+      notifier.notify();
+
+      expect(listener1Count, equals(1));
+      expect(listener2Count, equals(2));
+    });
   });
 
   group('dispose()', () {

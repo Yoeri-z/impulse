@@ -1,4 +1,3 @@
-// ignore_for_file: null_check_on_nullable_type_parameter
 import 'package:meta/meta.dart';
 
 import 'impulse_notifier.dart';
@@ -94,11 +93,10 @@ class ImpulseBox<T> extends ImpulseNotifier {
     final currentDependent = store.activeEvaluationBox;
     if (currentDependent != null && currentDependent != this) {
       addDependent(currentDependent);
-      currentDependent._dependencies.add(this);
-      retain();
+      if (currentDependent._dependencies.add(this)) retain();
     }
 
-    return _value!;
+    return _value as T;
   }
 
   /// Resets this box back to an uninitialized state, triggering cascading
@@ -149,14 +147,14 @@ class ImpulseBox<T> extends ImpulseNotifier {
 
   /// Resets dependencies of the box to pristine while keeping the internal state
   void reassemble() {
-    if (_value == null) return;
+    if (uninitialized) return;
 
     if (ref.recreateOnReassemble) {
       replace(_create(store));
       return;
     }
 
-    ref.reassemble?.call(_value!);
+    ref.reassemble?.call(_value as T);
   }
 
   /// Shared internal cleanup sequence for values, streams, and upstream dependencies.
@@ -164,9 +162,9 @@ class ImpulseBox<T> extends ImpulseNotifier {
     _cancelSubscription?.call();
     _cancelSubscription = null;
 
-    if (_value != null) {
-      delegate.onDispose(_value!);
-      ref.dispose?.call(_value!);
+    if (!uninitialized) {
+      delegate.onDispose(_value as T);
+      ref.dispose?.call(_value as T);
       _value = null;
     }
 

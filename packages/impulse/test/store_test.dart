@@ -159,6 +159,50 @@ void main() {
 
       expect(callCount, 1);
     });
+
+    test('Select notifies when the first selected value is null', () {
+      int callCount = 0;
+
+      final _ = store.select<MockNotifier, int?>(
+        counterRef,
+        (_) => null,
+        (_) => callCount++,
+      );
+
+      store.init(counterRef);
+
+      counter.increment();
+      counter.increment();
+
+      expect(callCount, 1);
+    });
+  });
+
+  group('Dependency Tracking', () {
+    test('counts a dependency read twice during evaluation once', () {
+      final dep = Ref((s) => MockObject());
+      final parent = Ref((s) {
+        s.get(dep);
+        return s.get(dep);
+      });
+
+      store.init(parent);
+
+      expect(store.box(dep).debugReferenceCount, equals(1));
+    });
+
+    test('drops a dependency once its dependent is dropped', () {
+      final dep = Ref((s) => MockObject());
+      final parent = Ref((s) {
+        s.get(dep);
+        return s.get(dep);
+      });
+
+      store.init(parent);
+      store.drop(parent);
+
+      expect(store.exists(dep), isFalse);
+    });
   });
 
   group('Store.drop', () {

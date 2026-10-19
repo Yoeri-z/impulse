@@ -241,6 +241,35 @@ void main() {
         reason: 'Should fire onSuccess for the active run',
       );
     });
+
+    test(
+      'discards the error of an older run if a newer run was started',
+      () async {
+        final completer1 = Completer<int>();
+        final completer2 = Completer<int>();
+
+        var activeCompleter = completer1;
+
+        final task = FutureNotifier(() {
+          return activeCompleter.future;
+        });
+
+        activeCompleter = completer2;
+        task.refresh();
+
+        completer2.complete(200);
+        await Future.delayed(Duration.zero);
+
+        completer1.completeError(Exception('Stale failure'));
+        await Future.delayed(Duration.zero);
+
+        expect(
+          task.hasError,
+          isFalse,
+          reason: 'Task should ignore the stale failure from Run 1',
+        );
+      },
+    );
   });
 
   group('taskRef', () {

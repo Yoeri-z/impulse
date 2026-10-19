@@ -84,12 +84,14 @@ class Store {
     bool onlyOnDependencyChange = false,
   }) {
     R? oldValue;
+    var hasOldValue = false;
 
     return this.watch(ref, (object) {
       final value = select(object);
 
-      if (oldValue == value) return;
+      if (hasOldValue && oldValue == value) return;
 
+      hasOldValue = true;
       oldValue = value;
 
       watch(value);
