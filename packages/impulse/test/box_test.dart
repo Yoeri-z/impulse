@@ -267,6 +267,27 @@ void main() {
       expect(second, 20);
     });
 
+    test('overrideWith applies to lazy initialization', () {
+      final box = createBox();
+
+      whenCreate(10);
+
+      box.overrideWith((_) => 20);
+
+      expect(box.produce(), 20);
+    });
+
+    test('removeOverride applies to lazy initialization', () {
+      final box = createBox();
+
+      whenCreate(10);
+
+      box.overrideWith((_) => 20);
+      box.removeOverride();
+
+      expect(box.produce(), 10);
+    });
+
     test('removeOverride removes active override', () {
       final box = createBox();
 
