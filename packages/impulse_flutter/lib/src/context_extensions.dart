@@ -37,7 +37,7 @@ extension GetContext on BuildContext {
           ErrorHint(
             'To fix this, consider one of the following approaches:\n'
             '  1. If this state belongs to the UI, use "context.use(ref)" inside the build method instead.\n'
-            '  2. If this is a global service that should live forever, use SingletonRef or FactoryRef when defining the reference.\n'
+            '  2. If this is a global service that should live forever, use SingletonRef when defining the reference.\n'
             '  3. If this object shouldn\'t cache state at all, change its definition to a FactoryRef.',
           ),
         ]);

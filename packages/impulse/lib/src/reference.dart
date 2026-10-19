@@ -40,7 +40,7 @@ class ImpulseReference<T> {
 
   /// The function used to update the object when the object reassembles.
   ///
-  /// This usefull to ensure compatibility with hot reload.
+  /// This can be used to ensure compatibility with hot reload.
   final Update<T>? reassemble;
 
   /// Whether a new instance should be created every time it is requested.
