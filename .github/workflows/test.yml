@@ -24,19 +24,22 @@ jobs:
           cache: true
 
       - name: Install dependencies
-        run: flutter pub get
-        working-directory: packages/${{ matrix.package }}
+        run: dart pub get
 
       - name: Run tests with coverage
         run: |
-          if grep -q "sdk: flutter" pubspec.yaml; then
-            flutter test --coverage
+          if grep -q "sdk: flutter" packages/${{ matrix.package }}/pubspec.yaml; then
+            flutter test --coverage packages/${{ matrix.package }}
           else
-            dart test --coverage=coverage
+            dart test --coverage=packages/${{ matrix.package }}/coverage packages/${{ matrix.package }}
             dart pub global activate coverage
-            dart pub global run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --packages=.dart_tool/package_config.json --report-on=lib
+            dart pub global run coverage:format_coverage \
+              --lcov \
+              --in=packages/${{ matrix.package }}/coverage \
+              --out=packages/${{ matrix.package }}/coverage/lcov.info \
+              --packages=.dart_tool/package_config.json \
+              --report-on=packages/${{ matrix.package }}/lib
           fi
-        working-directory: packages/${{ matrix.package }}
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
