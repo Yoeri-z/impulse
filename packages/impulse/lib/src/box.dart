@@ -22,7 +22,7 @@ class ImpulseBox<T> extends ImpulseNotifier {
   Create<T> get _create => _override ?? ref.create;
 
   void Function()? _cancelSubscription;
-  bool uninitialized = true;
+  bool _uninitialized = true;
   bool _isEvaluating = false;
 
   /// Exposes the internal [_value] of this [ImpulseBox]
@@ -45,11 +45,16 @@ class ImpulseBox<T> extends ImpulseNotifier {
   void removeDependent(ImpulseBox<dynamic> dependent) =>
       _dependents.remove(dependent);
 
+  /// Increments the internal reference count of the object
+  @internal
   void retain() {
     if (ref.keepAlive) return;
     _referenceCount++;
   }
 
+  /// Decrements the internal reference count of the object.
+  /// Drops from the store when the count <= 0.
+  @internal
   void release() {
     if (ref.keepAlive) return;
     _referenceCount--;
@@ -70,7 +75,7 @@ class ImpulseBox<T> extends ImpulseNotifier {
       return _create(store);
     }
 
-    if (uninitialized) {
+    if (_uninitialized) {
       if (_isEvaluating) {
         throw StateError(
           'Circular dependency detected. The factory for ${ref.runtimeType} '
@@ -102,10 +107,10 @@ class ImpulseBox<T> extends ImpulseNotifier {
   /// Resets this box back to an uninitialized state, triggering cascading
   /// updates down to its dependents.
   void reset() {
-    if (uninitialized) return;
+    if (_uninitialized) return;
 
     _teardown();
-    uninitialized = true;
+    _uninitialized = true;
 
     notify();
     _invalidateDependents();
@@ -118,7 +123,7 @@ class ImpulseBox<T> extends ImpulseNotifier {
   void overrideWith(Create<T> newCreate) {
     _override = newCreate;
 
-    if (!uninitialized) replace(_create(store));
+    if (!_uninitialized) replace(_create(store));
   }
 
   /// Remove override from this [ImpulseBox] if present.
@@ -130,7 +135,7 @@ class ImpulseBox<T> extends ImpulseNotifier {
 
     _override = null;
 
-    if (!uninitialized) replace(_create(store));
+    if (!_uninitialized) replace(_create(store));
   }
 
   /// Replaces the current value with a [newValue] and instantly
@@ -147,7 +152,7 @@ class ImpulseBox<T> extends ImpulseNotifier {
 
   /// Resets dependencies of the box to pristine while keeping the internal state
   void reassemble() {
-    if (uninitialized) return;
+    if (_uninitialized) return;
 
     if (ref.recreateOnReassemble) {
       replace(_create(store));
@@ -162,7 +167,7 @@ class ImpulseBox<T> extends ImpulseNotifier {
     _cancelSubscription?.call();
     _cancelSubscription = null;
 
-    if (!uninitialized) {
+    if (!_uninitialized) {
       delegate.onDispose(_value as T);
       ref.dispose?.call(_value as T);
       _value = null;
@@ -189,7 +194,7 @@ class ImpulseBox<T> extends ImpulseNotifier {
   void _bindValue(T value) {
     _value = value;
     _cancelSubscription = delegate.onBind(value, notify);
-    uninitialized = false;
+    _uninitialized = false;
   }
 
   @override

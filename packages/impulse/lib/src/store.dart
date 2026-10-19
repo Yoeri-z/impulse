@@ -80,9 +80,8 @@ class Store {
   void Function() select<T, R>(
     ImpulseReference<T> ref,
     R Function(T) select,
-    void Function(R) watch, {
-    bool onlyOnDependencyChange = false,
-  }) {
+    void Function(R) watch,
+  ) {
     R? oldValue;
     var hasOldValue = false;
 

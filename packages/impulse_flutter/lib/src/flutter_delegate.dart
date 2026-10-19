@@ -5,7 +5,7 @@ import 'package:impulse/impulse.dart' hide $store;
 Store createStore() => Store(delegate: FlutterReactivityDelegate());
 
 /// A [ReactivityDelegate] pre-configured with [FlutterAdapter] to support [Listenable] and [ChangeNotifier].
-class FlutterReactivityDelegate<T> extends ReactivityDelegate {
+class FlutterReactivityDelegate extends ReactivityDelegate {
   /// Creates a [FlutterReactivityDelegate] with optional [adapters].
   FlutterReactivityDelegate({List<ReactivityAdapter>? adapters})
     : super(adapters: [...?adapters, FlutterAdapter()]);
@@ -14,7 +14,7 @@ class FlutterReactivityDelegate<T> extends ReactivityDelegate {
 /// A [ReactivityAdapter] that handles Flutter's [Listenable] and [ChangeNotifier].
 class FlutterAdapter implements ReactivityAdapter {
   @override
-  void Function()? onBind(value, void Function() notify) {
+  void Function()? onBind(dynamic value, void Function() notify) {
     if (value is Listenable) {
       value.addListener(notify);
 

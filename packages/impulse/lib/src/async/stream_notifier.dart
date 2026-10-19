@@ -55,7 +55,7 @@ Ref<StreamNotifier<T>> streamRef<T>(
 class StreamNotifier<T> extends ImpulseNotifier
     implements AsyncStateListenable<T> {
   /// Create a [StreamNotifier] wrapping a [stream].
-  StreamNotifier(this.stream, {this.onData, this.onError, this.onDone}) {
+  StreamNotifier(this.stream, {this._onData, this._onError, this._onDone}) {
     _run();
   }
 
@@ -66,15 +66,15 @@ class StreamNotifier<T> extends ImpulseNotifier
   /// Called after each data event, before listeners are notified. Useful
   /// for side effects (logging, analytics, cache writes) that should
   /// happen once per event.
-  final void Function(T value)? onData;
+  final void Function(T value)? _onData;
 
   /// Called after the stream emits an error, before listeners are notified.
   /// Note the stream may continue emitting further events after an error
   /// unless it also closes.
-  final void Function(Object error, StackTrace stackTrace)? onError;
+  final void Function(Object error, StackTrace stackTrace)? _onError;
 
   /// Called once the stream closes, before listeners are notified.
-  final void Function()? onDone;
+  final void Function()? _onDone;
 
   AsyncState<T> _state = const AsyncState.loading();
 
@@ -130,21 +130,21 @@ class StreamNotifier<T> extends ImpulseNotifier
         if (disposed || callIdent != _ident) return;
         _isLoading = false;
         _state = AsyncState.data(event);
-        onData?.call(event);
+        _onData?.call(event);
         notify();
       },
       onError: (Object e, StackTrace st) {
         if (disposed || callIdent != _ident) return;
         _isLoading = false;
         _state = AsyncState.error(e, st, previousValue: _state.value);
-        onError?.call(e, st);
+        _onError?.call(e, st);
         notify();
       },
       onDone: () {
         if (disposed || callIdent != _ident) return;
         _isDone = true;
         _isLoading = false;
-        onDone?.call();
+        _onDone?.call();
         notify();
       },
     );
@@ -156,7 +156,7 @@ class StreamNotifier<T> extends ImpulseNotifier
   ///
   /// Prefer this over [reload] when the UI shouldn't flash back to an empty
   /// loading state — e.g. reconnecting a socket that already has data.
-  void refresh() async {
+  void refresh() {
     _isLoading = true;
     _state = AsyncState.loading(previousValue: _state.value);
     notify();
@@ -169,7 +169,7 @@ class StreamNotifier<T> extends ImpulseNotifier
   ///
   /// Prefer this when stale data shouldn't be shown at all while reloading
   /// — e.g. after changing a filter that makes the previous events invalid.
-  void reload() async {
+  void reload() {
     _isLoading = true;
     _state = const AsyncState.loading();
     notify();

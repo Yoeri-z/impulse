@@ -148,7 +148,7 @@ class AsyncData<T> extends AsyncState<T> {
 
   @override
   AsyncFailure<T> get asFailure => throw StateError(
-    'AsyncState is of type AsyncLoading, can not be casted to AsyncFailure',
+    'AsyncState is of type AsyncData, can not be casted to AsyncFailure',
   );
 }
 

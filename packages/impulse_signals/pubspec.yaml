@@ -1,6 +1,6 @@
 name: impulse_signals
 description: "An integration of signals into the impulse_flutter package."
-version: 0.10.0
+version: 0.11.0
 homepage: https://github.com/Yoeri-z/impulse
 issue_tracker: https://github.com/Yoeri-z/impulse/issues
 topics:
@@ -8,14 +8,14 @@ topics:
   - signals
 
 environment:
-  sdk: ^3.11.4
+  sdk: ^3.12.0
   flutter: ">=1.17.0"
 
 dependencies:
   flutter:
     sdk: flutter
 
-  impulse_flutter: ^0.10.0
+  impulse_flutter: ^0.11.0
   signals_flutter: ^7.1.0
 
 dev_dependencies:

@@ -3,6 +3,8 @@
 - Fixed a store swap resetting a user-provided store.
 - `Disposables.managed` now runs the custom dispose callback for objects replaced on reassemble.
 - Updated dependency on `impulse` to `^0.11.0`.
+- Removed the unused type parameter from `FlutterReactivityDelegate`.
+- Requires Dart `3.12` or newer.
 
 ## 0.10.0
 - Fixed outdated code documentation and README example.

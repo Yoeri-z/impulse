@@ -47,8 +47,7 @@ Ref<FutureNotifier<T>> futureRef<T>(
 class FutureNotifier<T> extends ImpulseNotifier
     implements AsyncStateListenable<T> {
   /// Create a [FutureNotifier] wrapping a [call]
-  FutureNotifier(Future<T> Function() call, {this.onSuccess, this.onError})
-    : _call = call {
+  FutureNotifier(this._call, {this._onSuccess, this._onError}) {
     _run();
   }
 
@@ -59,10 +58,10 @@ class FutureNotifier<T> extends ImpulseNotifier
   /// Called after [_call] completes successfully, before listeners are
   /// notified. Useful for side effects (logging, analytics, cache writes)
   /// that should happen exactly once per successful completion.
-  final void Function(T value)? onSuccess;
+  final void Function(T value)? _onSuccess;
 
   /// Called after [_call] throws, before listeners are notified.
-  final void Function(Object error, StackTrace stackTrace)? onError;
+  final void Function(Object error, StackTrace stackTrace)? _onError;
 
   AsyncState<T> _state = const AsyncState.loading();
 
@@ -110,12 +109,12 @@ class FutureNotifier<T> extends ImpulseNotifier
       if (disposed || callIdent != _ident) return;
 
       _state = AsyncState.data(result);
-      onSuccess?.call(result);
+      _onSuccess?.call(result);
       notify();
     } catch (e, st) {
       if (disposed || callIdent != _ident) return;
       _state = AsyncState.error(e, st, previousValue: _state.value);
-      onError?.call(e, st);
+      _onError?.call(e, st);
       notify();
     }
   }

@@ -1,3 +1,7 @@
+## 0.11.0
+- Updated dependency on `impulse_flutter` to `^0.11.0`.
+- Requires Dart `3.12` or newer.
+
 ## 0.10.0
 - Updated dependency on `impulse_flutter` to `^0.10.0`.
 

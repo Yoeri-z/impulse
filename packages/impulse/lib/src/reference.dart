@@ -28,9 +28,10 @@ class ImpulseReference<T> {
     this.reassemble,
     this.recreateOnReassemble = false,
     this.dispose,
-    Object? key,
-  }) : _key = key;
+    this._key,
+  });
 
+  /// A unique key to set this reference appart. By default it is the [ImpulseReference] object itsself.
   final Object? _key;
 
   /// The unique key used to identify this reference in the store.

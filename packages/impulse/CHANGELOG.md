@@ -4,6 +4,11 @@
 - Fixed a crash when notifying listeners reentrantly.
 - `Store.select` no longer swallows `null` selections.
 - `FutureNotifier` no longer applies failures from discarded runs.
+- Removed the unused `onlyOnDependencyChange` parameter from `Store.select`.
+- `FutureNotifier`/`StreamNotifier` callbacks are now private and only provided through the constructors.
+- `ImpulseBox.retain`/`ImpulseBox.release` are now internal and `ImpulseBox.uninitialized` is private.
+- Fixed the error message of `AsyncData.asFailure`.
+- Requires Dart `3.12` or newer.
 
 ## 0.10.0
 - Added `recreateOnReassemble` parameter to `ImpulseReference`. When enabled, `reassemble()` fully recreates the object through its factory (like a "hot restart" for that object) instead of invoking the `reassemble` callback.
