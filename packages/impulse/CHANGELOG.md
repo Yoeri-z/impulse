@@ -1,3 +1,6 @@
+## 0.11.1
+- README polish: fixed typos and awkward wording.
+
 ## 0.11.0
 - Fixed a reference leak when reading the same dependency multiple times during one evaluation.
 - Fixed a crash when producing a nullable value.

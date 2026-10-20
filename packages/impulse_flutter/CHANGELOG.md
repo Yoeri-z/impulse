@@ -1,3 +1,6 @@
+## 0.11.1
+- README polish: fixed typos and awkward wording.
+
 ## 0.11.0
 - Fixed widgets losing their binding when moved in the widget tree (e.g. `GlobalKey` reparenting). Deactivation no longer unbinds; disposal settles at the end of the frame.
 - Fixed a store swap resetting a user-provided store.
