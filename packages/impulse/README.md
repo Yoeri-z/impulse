@@ -116,6 +116,21 @@ final profileA = store.get(userProfileRef('Alice'));
 final profileB = store.get(userProfileRef('Bob'));
 ```
 
+### Dependency tracking
+References automatically track dependencies. This means that the object is recreated if any of its dependencies change.
+
+```dart
+final apiClientRef = Ref((store) => ApiClient());
+
+// if the api client ever gets replaced or overriden 
+// the auth service is recreated.
+// Also notice that in this example the api client is an implicit singleton because
+// it is depended upon by a singleton.
+final authServiceRef = SingletonRef(
+  (store) => AuthService(store.get(apiClientRef)), 
+);
+```
+
 ### Helpers
 
 `futureRef` and `streamRef` are convenience functions that create a `Ref` wrapping a special notifier object.
@@ -207,6 +222,8 @@ notifier.refresh();
 // to reload (re-subscribe), immediately discarding old value or error
 notifier.reload();
 ```
+
+
 ---
 
 ## `ImpulseNotifier` and error handling

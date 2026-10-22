@@ -155,6 +155,21 @@ final authServiceRef = Ref(
 );
 ```
 
+#### Dependency tracking
+References automatically track dependencies. This means that the object is recreated if any of its dependencies change.
+
+```dart
+final apiClientRef = Ref((store) => ApiClient());
+
+// if the api client ever gets replaced or overriden 
+// the auth service is recreated.
+// Also notice that in this example the api client is an implicit singleton because
+// it is depended upon by a singleton.
+final authServiceRef = SingletonRef(
+  (store) => AuthService(store.get(apiClientRef)), 
+);
+```
+
 ### Helpers
 
 Some convenience functions are available that create a `Ref` wrapping a special notifier object.
