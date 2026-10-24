@@ -3,7 +3,6 @@ library;
 
 export 'package:impulse_flutter/impulse_flutter.dart'
     hide
-        attempt,
         createStore,
         AsyncState,
         AsyncData,
@@ -11,11 +10,8 @@ export 'package:impulse_flutter/impulse_flutter.dart'
         AsyncFailure,
         AsyncLoading,
         AsyncSelector,
-        AsyncStateListenable,
-        Unpacked,
-        UnpackFuture;
+        AsyncStateListenable;
 
 export 'package:signals_flutter/signals_flutter.dart';
 export 'src/controller.dart';
-export 'src/async_utils.dart';
 export 'src/signals_delegate.dart';

@@ -400,18 +400,21 @@ void main() {
     verifyOnBind(20);
   });
 
-  test('Reassemble with recreateOnReassemble does not call reassemble callback', () {
-    bool reassembled = false;
-    final box = createBox(
-      reassemble: (p0) => reassembled = true,
-      recreateOnReassemble: true,
-    );
+  test(
+    'Reassemble with recreateOnReassemble does not call reassemble callback',
+    () {
+      bool reassembled = false;
+      final box = createBox(
+        reassemble: (p0) => reassembled = true,
+        recreateOnReassemble: true,
+      );
 
-    whenCreate(10);
-    box.produce();
+      whenCreate(10);
+      box.produce();
 
-    box.reassemble();
+      box.reassemble();
 
-    expect(reassembled, isFalse);
-  });
+      expect(reassembled, isFalse);
+    },
+  );
 }

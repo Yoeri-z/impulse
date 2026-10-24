@@ -1,3 +1,7 @@
+## 0.12.0
+- Reflects the breaking async/error-handling API changes in `impulse_flutter`: the package's own `attempt` wrapper and the `Unpacked`/`unpacked` destructuring extensions are removed in favor of `AsyncResult.guard` and its combinators.
+- Updated dependency on `impulse_flutter` to `^0.12.0`.
+
 ## 0.11.1
 - README polish: fixed typos and awkward wording.
 

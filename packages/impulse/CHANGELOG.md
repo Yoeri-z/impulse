@@ -1,3 +1,12 @@
+## 0.12.0
+- Added `AsyncResult`, the resolved part of `AsyncState` (`AsyncData`/`AsyncFailure`), as the pattern for data-side fallible calls without loading states:
+  - `AsyncResult.guard` wraps a fallible call; throws (async or sync) become an `AsyncFailure`.
+  - `mapData`/`mapDataAsync` chain fallible work; failures propagate untouched (including `previousValue`). `mapDataAsync` wraps the chained call by default (`wrap: false` to disable).
+  - `recover`, `getOr` for fallbacks, `fold` for the exhaustive two-way match.
+- `AsyncData` and `AsyncFailure` now extend `AsyncResult`.
+- Added `AsyncState.onFailure` for logging failures without breaking the flow.
+- Removed `attempt`, the `Result` classes (`Ok`/`Failure`), the `unpacked`/`Unpacked` destructuring API and `AsyncState.fromResult`; use `AsyncResult.guard` and its combinators instead (breaking).
+
 ## 0.11.1
 - README polish: fixed typos and awkward wording.
 

@@ -377,32 +377,32 @@ For small widgets `context.use` is fine and might even be preferred.
 
 ## Handling errors
 
-Impulse includes a functional error-handling utility to deal with operations that might fail (e.g., network requests, file I/O).
+Impulse includes a functional error-handling layer to deal with operations that might fail (e.g., network requests, file I/O). It comes in two flavors, depending on what you need:
 
-- **`AsyncState<T>`**: A sealed class with subclasses `AsyncData`, `AsyncError` and `AsyncLoading` for pattern matching.
-- **`attempt`**: A utility function that wraps an asynchronous execution, returning a `Result<T>` without throwing.
+- **`AsyncResult<T>`** is for the data side: one-off calls where you don't care about loading states, only whether the call succeeded or failed. It is the resolved part of `AsyncState`: a sealed class with subclasses `AsyncData` (holding a value) and `AsyncFailure` (holding an error and stack trace).
+- **`AsyncState<T>`** is for the UI side: when you also want to render loading states. It adds `AsyncLoading` on top of `AsyncResult`.
 
 ```dart
 void main() async {
-  final result = await attempt(() => foo());
+  final result = await AsyncResult.guard(() => foo());
 
-  if (result is AsyncFailure<String>) {
-    logErr(result);
-    return;
+  switch (result) {
+    case AsyncData(:final value):
+      print('Fetched value: $value');
+    case AsyncFailure(:final error, :final stackTrace):
+      logErr(error, stackTrace);
   }
 
-  print('Fetched value: ${result.value!}');
+  // failing chains propagate the failure, so the success path
+  // never runs on error data:
+  final profile = await AsyncResult.guard(() => fetchUser(id)).mapDataAsync(
+    (user) => fetchProfile(user),
+  );
 
-  // in functions, pattern matching is often messy.
-  // this is why this package adds an `unpacked` getter.
-  
-  final (value, err) = await attempt(() => bar()).unpacked;
-
-  if (err != null) {
-    logErr(err);
-  }
-
-  print('Fetched value: ${value!}');
+  // or repair a failure with a fallback:
+  final user = (await AsyncResult.guard(() => fetchUser(id)))
+      .recover((error, st) => User.guest)
+      .getOr(User.guest);
 }
 ```
 

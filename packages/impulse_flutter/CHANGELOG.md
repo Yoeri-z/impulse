@@ -1,3 +1,7 @@
+## 0.12.0
+- Reflects the breaking async/error-handling API changes in `impulse`: `attempt`, `Result` (`Ok`/`Failure`) and the `unpacked` destructuring are removed in favor of `AsyncResult.guard` and its combinators (`mapData`, `mapDataAsync`, `recover`, `getOr`).
+- Updated dependency on `impulse` to `^0.12.0`.
+
 ## 0.11.1
 - README polish: fixed typos and awkward wording.
 

@@ -1,31 +1,5 @@
 import 'package:meta/meta.dart';
 
-/// Attempts to execute the asynchronous [call] and returns its result.
-///
-/// Returns an [AsyncData] if the call succeeds, or an [AsyncFailure] if it fails.
-Future<AsyncState<T>> attempt<T>(Future<T> Function() call) async {
-  try {
-    return AsyncData(await call());
-  } catch (e, st) {
-    return AsyncFailure(e, st);
-  }
-}
-
-/// the value of an `AsyncState` unpacked into a record, useful for linearizing the flow of async operations
-/// in bodies of code.
-typedef Unpacked<T> = (T? value, AsyncFailure<T>? err);
-
-/// extension to allow unpacking the future of a state
-extension UnpackFuture<T> on Future<AsyncState<T>> {
-  /// Converts the AsyncState in the future to an [Unpacked].
-  /// Usefull for linearizing the flow of async operations in bodies of code.
-  /// example
-  /// ```
-  /// final (value, err) = await attempt(() => foo()).unpacked;
-  /// ```
-  Future<Unpacked<T>> get unpacked => then((v) => v.unpacked);
-}
-
 /// Represents the state of an asynchronous operation.
 @immutable
 sealed class AsyncState<T> {
@@ -70,20 +44,19 @@ sealed class AsyncState<T> {
   /// Cast this [AsyncState] to [AsyncFailure]
   AsyncFailure<T> get asFailure;
 
-  /// Unpacks the state into a record.
-  /// Usefull for linearizing the flow of async operations in bodies of code.
-  ///
-  /// example
-  /// ```
-  /// final (value, err) = state.unpacked;
-  ///
-  /// if(err != null){
-  ///   logErr(err);
-  /// }
-  ///
-  /// print(value);
-  /// ```
-  Unpacked<T> get unpacked => (value, isFailure ? asFailure : null);
+  /// Applies a callback based on the state's error, passed together with the
+  /// previous data value (if any). See [map] for the exhaustive variant.
+  /// Usefull for logging failures without breaking the flow.
+  void onFailure(
+    void Function(Object error, StackTrace stackTrace, T? data) action,
+  ) {
+    switch (this) {
+      case AsyncFailure(:final error, :final stackTrace, :final previousValue):
+        action(error, stackTrace, previousValue);
+      case _:
+        break;
+    }
+  }
 
   /// Maps the current state to a value of type [R] using the matching callback.
   R map<R>({
@@ -129,8 +102,135 @@ class AsyncLoading<T> extends AsyncState<T> {
   );
 }
 
+/// A resolved [AsyncState]: either an [AsyncData] or an [AsyncFailure].
+///
+/// The loading state is not part of [AsyncResult], making it the data-side
+/// flavor of [AsyncState]: one-off calls where only success or failure
+/// matters, without loading UI concerns.
+@immutable
+sealed class AsyncResult<T> extends AsyncState<T> {
+  /// Creates an [AsyncResult].
+  const AsyncResult();
+
+  /// Runs the asynchronous [call], capturing any thrown error into an
+  /// [AsyncFailure] and its return value into an [AsyncData].
+  static Future<AsyncResult<T>> guard<T>(Future<T> Function() call) async {
+    try {
+      return AsyncData(await call());
+    } catch (error, stackTrace) {
+      return AsyncFailure(error, stackTrace);
+    }
+  }
+
+  /// Maps the result to a value of type [R] using the matching callback.
+  ///
+  /// This is the two-way (success or failure) exhaustive variant of
+  /// [AsyncState.map], which also handles loading.
+  R fold<R>({
+    required R Function(T data) onData,
+    required R Function(Object error, StackTrace stackTrace) onError,
+  }) {
+    return switch (this) {
+      AsyncData(:final value) => onData(value),
+      AsyncFailure(:final error, :final stackTrace) => onError(
+        error,
+        stackTrace,
+      ),
+    };
+  }
+
+  /// Chains a fallible operation onto the result.
+  ///
+  /// If this is an [AsyncData], runs [onData] with the value, wrapping it in
+  /// an [AsyncData]. If this is an [AsyncFailure], [onData] is not called and
+  /// this [AsyncFailure] is propagated unchanged. This makes it easy to
+  /// sequence fallible operations without nesting or losing the error path.
+  ///
+  /// example
+  /// ```dart
+  /// final result = AsyncData(1).mapData((value) => value + 1);
+  /// ```
+  AsyncResult<R> mapData<R>(R Function(T data) onData) {
+    return switch (this) {
+      AsyncData(:final value) => AsyncData(onData(value)),
+      AsyncFailure(:final error, :final stackTrace, :final previousValue) =>
+        AsyncFailure<R>(
+          error,
+          stackTrace,
+          previousValue: (previousValue as Object?) as R?,
+        ),
+    };
+  }
+
+  /// Chains an asynchronous fallible operation onto the result.
+  ///
+  /// Same as [mapData], but for operations that require awaiting.
+  ///
+  /// The chained call is wrapped in [AsyncResult.guard] by default, so a
+  /// thrown error becomes an [AsyncFailure] instead of escaping. Set [wrap]
+  /// to `false` to disable this, letting errors propagate uncaught.
+  ///
+  /// example
+  /// ```dart
+  /// final result = await AsyncResult.guard(() => fetchUser(id)).mapDataAsync(
+  ///   (user) => fetchProfile(user),
+  /// );
+  /// ```
+  Future<AsyncResult<R>> mapDataAsync<R>(
+    Future<R> Function(T data) onData, {
+    bool wrap = true,
+  }) async {
+    return switch (this) {
+      AsyncData(:final value) =>
+        wrap ? .guard(() => onData(value)) : AsyncData(await onData(value)),
+      AsyncFailure(:final error, :final stackTrace, :final previousValue) =>
+        Future.value(
+          AsyncFailure<R>(
+            error,
+            stackTrace,
+            previousValue: (previousValue as Object?) as R?,
+          ),
+        ),
+    };
+  }
+
+  /// Repairs an [AsyncFailure] into an [AsyncData] by running [onError] with
+  /// the error and stack trace. An [AsyncData] is passed through untouched.
+  ///
+  /// example
+  /// ```dart
+  /// final result = (await AsyncResult.guard(() => fetchUser(id)))
+  ///     .recover((error, st) => User.guest);
+  /// ```
+  AsyncResult<T> recover(
+    AsyncResult<T> Function(Object error, StackTrace stackTrace) onError,
+  ) {
+    return switch (this) {
+      AsyncData<T>() => this as AsyncData<T>,
+      AsyncFailure(:final error, :final stackTrace) => onError(
+        error,
+        stackTrace,
+      ),
+    };
+  }
+}
+
+/// extension to chain and repair results that are still in flight.
+extension AsyncResultFuture<T> on Future<AsyncResult<T>> {
+  /// Chained variant of [AsyncResult.mapDataAsync] for futures of results.
+  ///
+  /// The chained call is wrapped in [AsyncResult.guard] by default; see
+  /// [AsyncResult.mapDataAsync] for details.
+  Future<AsyncResult<R>> mapDataAsync<R>(
+    Future<R> Function(T data) onData, {
+    bool wrap = true,
+  }) {
+    return then((result) => result.mapDataAsync(onData, wrap: wrap));
+  }
+}
+
 /// Represents a successfully completed asynchronous operation with a value.
-class AsyncData<T> extends AsyncState<T> {
+class AsyncData<T> extends AsyncResult<T> {
   /// Creates an [AsyncData] state with the given [value].
   const AsyncData(this.value);
 
@@ -153,7 +253,7 @@ class AsyncData<T> extends AsyncState<T> {
 }
 
 /// Represents a failed asynchronous operation.
-class AsyncFailure<T> extends AsyncState<T> {
+class AsyncFailure<T> extends AsyncResult<T> {
   /// Creates an [AsyncFailure] state with the given [error], [stackTrace], and
   /// optionally a [previousValue].
   const AsyncFailure(this.error, this.stackTrace, {this.previousValue});

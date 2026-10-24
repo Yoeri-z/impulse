@@ -252,14 +252,8 @@ void main() {
     var reassembled1 = false;
     var reassembled2 = false;
 
-    final r1 = Ref(
-      (s) => Object(),
-      reassemble: (value) => reassembled1 = true,
-    );
-    final r2 = Ref(
-      (s) => Object(),
-      reassemble: (value) => reassembled2 = true,
-    );
+    final r1 = Ref((s) => Object(), reassemble: (value) => reassembled1 = true);
+    final r2 = Ref((s) => Object(), reassemble: (value) => reassembled2 = true);
 
     store.init(r1);
     store.init(r2);

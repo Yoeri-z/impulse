@@ -88,7 +88,7 @@ class CounterPage extends SignalWidget {
 
 ```
 ## Modified async utilities
-The async utilities in this package use [AsyncState] from signals, other than that they remain the same as described in [impulse_flutter](https://pub.dev/packages/impulse_flutter)
+The async utilities in this package use [AsyncState] from signals, other than that they remain the same as described in [impulse_flutter](https://pub.dev/packages/impulse_flutter). The `Result` datatype is removed because in practice it is obsolete if you are using signals `asyncSignals`.
 
 ## Modified reactivity
 

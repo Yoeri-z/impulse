@@ -138,56 +138,6 @@ void main() {
     });
   });
 
-  group('attempt', () {
-    test('succeeding method returns AsyncData', () async {
-      final result = await attempt(() async => 'success');
-
-      expect(result, isA<AsyncData>());
-      expect(result.value, equals('success'));
-    });
-
-    test('crashing method returns AsyncError', () async {
-      final exception = Exception('crash');
-      final result = await attempt<String>(() async => throw exception);
-
-      expect(result, isA<AsyncError>());
-      expect(result.error, exception);
-      expect(result.stackTrace, isNotNull);
-    });
-  });
-
-  group('unpack', () {
-    test('Unpacks AsyncLoading', () {
-      final state1 = AsyncLoading();
-
-      expect(state1.unpacked, equals((null, null)));
-    });
-
-    test('Unpacks AsyncData', () {
-      final state = AsyncData(0);
-
-      expect(state.unpacked, equals((0, null)));
-    });
-
-    test('Unpacks AsyncFailure', () {
-      final state = AsyncError(0, StackTrace.empty);
-
-      expect(state.unpacked, equals((null, state)));
-    });
-
-    test('Unpacks Future<AsyncData>', () async {
-      final state = AsyncData(0);
-
-      expect(await Future.value(state).unpacked, (0, null));
-    });
-
-    test('Unpacks Future<AsyncError>', () async {
-      final state = AsyncError(0, StackTrace.empty);
-
-      expect(await Future.value(state).unpacked, (null, state));
-    });
-  });
-
   group('Reactivity delegate', () {
     late Store store;
 
