@@ -128,16 +128,15 @@ A `Ref`/`FamilyRef` that is only ever read (never `use`-d) is considered a memor
 
 ## AsyncState
 
-`FutureNotifier<T>`/`StreamNotifier<T>` expose state as `AsyncState<T>` (`AsyncData`, `AsyncError`, `AsyncLoading`):
+`FutureNotifier<T>`/`StreamNotifier<T>` expose state as `AsyncState<T>` (`AsyncData`, `AsyncFailure`, `AsyncLoading`):
 
 ```dart
 final notifier = store.get(userFutureRef);
 
-final (user, err) = notifier(); // destructure current state
 switch (notifier.state) {
   AsyncLoading() => print('loading'),
   AsyncData(:final value) => print(value),
-  AsyncError(:final error) => print(error),
+  AsyncFailure(:final error, :final stackTrace) => print(error),
 }
 
 notifier.isLoading; notifier.hasValue; notifier.hasError;
@@ -149,12 +148,36 @@ notifier.reload();  // re-subscribe, discard old value/error
 
 `StreamNotifier` additionally exposes `notifier.isDone` (stream closed).
 
-Fallible async work: use `attempt`, which returns a `Result` instead of throwing:
+Fallible async work comes in two flavors:
+
+- **`AsyncResult<T>`** — data side: one-off calls where only success/failure matters. It is the resolved part of `AsyncState` (a sealed class with `AsyncData` and `AsyncFailure` subclasses), so a result can be fed directly to notifiers/binder widgets without conversion.
+- **`AsyncState<T>`** — UI side: adds `AsyncLoading` on top of `AsyncResult` for rendering loading states.
+
+Use `AsyncResult.guard` instead of try/catch; failures propagate through chained calls:
 
 ```dart
-final (value, err) = (await attempt(() => foo())).unpacked;
-if (err != null) { handleError(err); }
+final result = await AsyncResult.guard(() => foo());
+
+switch (result) {
+  case AsyncData(:final value):
+    print('value: $value');
+  case AsyncFailure(:final error, :final stackTrace):
+    handleError(error, stackTrace);
+}
+
+// failing chains propagate the failure, so the success path
+// never runs on error data:
+final profile = await AsyncResult.guard(() => fetchUser(id)).mapDataAsync(
+  (user) => fetchProfile(user), // wrapped in guard by default
+);
+
+// or repair a failure with a fallback:
+final user = (await AsyncResult.guard(() => fetchUser(id)))
+    .recover((error, st) => User.guest)
+    .getOr(User.guest);
 ```
+
+Also available: `mapData` (sync chaining), `fold` (exhaustive two-way match), `AsyncState.onFailure` for logging without breaking the flow.
 
 `FutureNotifier`/`StreamNotifier` can also be owned directly by a `State` when the value doesn't need sharing through the store. The constructor starts immediately, so create lazily and dispose:
 
