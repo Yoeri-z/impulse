@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:impulse/impulse.dart';
 
 import 'context_extensions.dart';

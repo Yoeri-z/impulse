@@ -1,3 +1,6 @@
+## 0.12.1
+- Removed deprecated dependencies on flutter/material.
+
 ## 0.12.0
 - Reflects the breaking async/error-handling API changes in `impulse`: `attempt`, `Result` (`Ok`/`Failure`) and the `unpacked` destructuring are removed in favor of `AsyncResult.guard` and its combinators (`mapData`, `mapDataAsync`, `recover`, `getOr`).
 - Updated dependency on `impulse` to `^0.12.0`.

@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:impulse/impulse.dart' hide $store;
 
 import 'flutter_delegate.dart';
@@ -57,14 +57,11 @@ class StoreScope extends StatefulWidget {
     final element = context as Element;
 
     if (!storeElement.hasRegisteredDisposalForElement(element, ref.key)) {
-      final dispose = storeWidget.store.watch(
-        ref,
-        (_) {
-          // The unbind is deferred until the end of the frame, so a late
-          // notification can still arrive after the element was unmounted.
-          if (element.mounted) element.markNeedsBuild();
-        },
-      );
+      final dispose = storeWidget.store.watch(ref, (_) {
+        // The unbind is deferred until the end of the frame, so a late
+        // notification can still arrive after the element was unmounted.
+        if (element.mounted) element.markNeedsBuild();
+      });
 
       storeElement.registerDisposal(element, ref.key, dispose);
     }
